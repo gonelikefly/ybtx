@@ -488,6 +488,70 @@ T.ICEBRICK = def('icebrick', true, (g) => {
   P(g, 0, 0, 16, 1, '#d8f0fc')
 })
 
+// 树屋酒吧：银叶巨树（树冠 3x3 部件 + 树干）
+export const TH_CANOPY: number[] = []
+for (let part = 0; part < 9; part++) {
+  TH_CANOPY.push(def(`tcanopy${part}`, true, (g, v) => {
+    const r = Math.floor(part / 3), c = part % 3
+    P(g, 0, 0, 16, 16, '#5e9482')
+    speckle(g, v, ['#4f8070', '#74a896', '#456f62'], 18, 31)
+    for (let i = 0; i < 4; i++) {
+      const x = Math.floor(rnd(v, i, 41) * 12), y = 3 + Math.floor(rnd(i, v, 42) * 9)
+      P(g, x, y, 3, 2, '#86b8a6')
+      P(g, x, y + 2, 3, 1, '#3f6a5e')
+    }
+    if (r === 0) {
+      for (let x = 0; x < 16; x++) P(g, x, 0, 1, 3 + (rnd(x, v, 43) > 0.5 ? 1 : 0), '#f4f8fc')
+      P(g, 0, 4, 16, 1, '#cfe0ec')
+    }
+    if (r === 2) {
+      P(g, 0, 12, 16, 4, '#3f6a5e')
+      P(g, 0, 15, 16, 1, '#2f5248')
+      for (let x = 1; x < 16; x += 3) P(g, x, 11, 1, 1, '#3f6a5e')
+    }
+    if (c === 0) P(g, 0, 0, 2, 16, '#3f6a5e')
+    if (c === 2) P(g, 14, 0, 2, 16, '#3f6a5e')
+    const cut = [9, 7, 6, 5, 4, 3, 3, 2, 2, 1, 1]
+    for (let i = 0; i < cut.length; i++) {
+      const w = cut[i]
+      const y = r === 0 ? i : 15 - i
+      if (r !== 1 && c === 0) g.clearRect(0, y, w, 1)
+      if (r !== 1 && c === 2) g.clearRect(16 - w, y, w, 1)
+    }
+  }))
+}
+const trunkTile = (name: string, kind: 'L' | 'C' | 'R' | 'WIN' | 'DOOR', base: boolean) =>
+  def(name, true, (g, v) => {
+    P(g, 0, 0, 16, 16, '#7a5638')
+    P(g, 3, 0, 1, 16, '#5e3f28')
+    P(g, 8, 0, 1, 16, '#5e3f28')
+    P(g, 12, 0, 1, 16, '#926a46')
+    speckle(g, v, ['#5e3f28', '#926a46'], 6, 51)
+    if (kind === 'L') P(g, 0, 0, 3, 16, '#4a3020')
+    if (kind === 'R') P(g, 13, 0, 3, 16, '#4a3020')
+    if (kind === 'WIN') {
+      P(g, 2, 13, 12, 2, '#a8794a')
+      P(g, 3, 2, 10, 11, '#4a3020')
+      P(g, 4, 3, 8, 9, '#f6d878')
+      P(g, 4, 3, 8, 2, '#ffe9a0')
+      P(g, 7, 3, 1, 9, '#4a3020')
+      P(g, 4, 7, 8, 1, '#4a3020')
+    }
+    if (kind === 'DOOR') {
+      P(g, 1, 0, 14, 16, '#3a2414')
+      P(g, 3, 2, 10, 14, '#8a5a30')
+      P(g, 3, 2, 10, 1, '#a8743c')
+      P(g, 7, 2, 1, 14, '#5e3a1c')
+      P(g, 11, 9, 2, 2, '#f0c040')
+    }
+    if (base) P(g, 0, 14, 16, 2, '#4a3020')
+  })
+export const TH_TRUNK = {
+  L: trunkTile('trunkL', 'L', false), C: trunkTile('trunkC', 'C', false), R: trunkTile('trunkR', 'R', false),
+  WIN: trunkTile('trunkWin', 'WIN', false), DOOR: trunkTile('trunkDoor', 'DOOR', true),
+  BL: trunkTile('trunkBL', 'L', true), BC: trunkTile('trunkBC', 'C', true), BR: trunkTile('trunkBR', 'R', true),
+}
+
 // 屋顶：6 种颜色 × 6 个部位（上排左/中/右、下排左/中/右）
 const ROOF_COLORS: [string, string, string][] = [
   ['#c4543c', '#e0705a', '#8a3424'],

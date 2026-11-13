@@ -1,4 +1,4 @@
-import { T, ROOFS, ROOF_PART, rnd, DOWN, UP, RIGHT } from './sprites'
+import { T, ROOFS, ROOF_PART, TH_CANOPY, TH_TRUNK, rnd, DOWN, UP, RIGHT } from './sprites'
 import type { Dir } from './sprites'
 import type { MapDef, Warp } from './types'
 
@@ -129,8 +129,15 @@ export class MB {
     ANCH[this.id][name] = [x, y]
   }
   clearAnchors(r = 1) {
+    const keep = new Set<number>([T.WALL, T.WINDOW, ...TH_CANOPY, ...Object.values(TH_TRUNK)])
     for (const [x, y] of Object.values(ANCH[this.id])) {
-      for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (this.getG(x + i, y + j) !== T.WATER) this.ob(x + i, y + j, -1)
+      for (let j = -r; j <= r; j++) {
+        for (let i = -r; i <= r; i++) {
+          const o = this.getO(x + i, y + j)
+          if (keep.has(o) || (o >= 0 && o >= ROOFS[0][0])) continue
+          if (this.getG(x + i, y + j) !== T.WATER) this.ob(x + i, y + j, -1)
+        }
+      }
     }
   }
   build(): MapDef {
@@ -399,10 +406,18 @@ function town(id: string, name: string, area: string, w: number, h: number, o: {
   m.ob(14, 64, T.FENCE)
   m.ob(11, 65, T.SIGN)
   // 树屋酒吧：巨树
-  m.orect(46, 31, 5, 3, T.TREE)
-  m.ob(48, 34, T.TREE)
-  m.ob(47, 34, T.BUSH)
-  m.ob(49, 34, T.BUSH)
+  for (let j = 0; j < 5; j++) for (let i = 0; i < 11; i++) {
+    m.ob(43 + i, 28 + j, TH_CANOPY[(j === 0 ? 0 : j === 4 ? 6 : 3) + (i === 0 ? 0 : i === 10 ? 2 : 1)])
+  }
+  const TR = TH_TRUNK
+  const trunk = [
+    [TR.L, TR.C, TR.C, TR.C, TR.R],
+    [TR.L, TR.C, TR.WIN, TR.C, TR.R],
+    [TR.BL, TR.BC, TR.DOOR, TR.BC, TR.BR],
+  ]
+  trunk.forEach((row, j) => row.forEach((t, i) => m.ob(46 + i, 33 + j, t)))
+  m.ob(45, 35, T.BUSH)
+  m.ob(51, 35, T.BUSH)
   m.gr(48, 36, T.PORTAL)
   m.ob(48, 36, -1)
   m.ob(50, 37, T.SIGN)
