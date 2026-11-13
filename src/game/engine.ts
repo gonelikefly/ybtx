@@ -1,5 +1,5 @@
 import { MAP_LIST } from './maps'
-import { NPCS, TRIGGERS, SIGNS, INTRO } from './story'
+import { NPCS, TRIGGERS, SIGNS, INTRO, CAMPS } from './story'
 import { ACTORS, ENEMIES, ITEMS, SKILLS, PORTRAITS, expNeed } from './data'
 import type { Portrait } from './data'
 import { TS, TILES, T, tileCanvas, charCanvas, creatureCanvas, rnd, DOWN, LEFT, RIGHT, UP } from './sprites'
@@ -619,6 +619,26 @@ export class Engine {
     }
     const sign = SIGNS[`${this.mapId}:${this.px + dx},${this.py + dy}`]
     if (sign) void this.runScript(sign.map((t) => ({ t: 'narr', text: t }) as Step))
+    else if (this.map.o[ty * this.map.w + tx] === T.CAMPFIRE) void this.rest()
+  }
+  private async rest() {
+    const c = CAMPS[this.mapId]
+    this.busy++
+    try {
+      await this.fadeTo(1, 300)
+      for (const a of this.roster) {
+        a.hp = a.mhp
+        a.mp = a.mmp
+      }
+      if (c) this.checkpoint = { map: this.mapId, x: c.rx, y: c.ry }
+      this.save(true)
+      await sleep(350)
+      await this.fadeTo(0, 300)
+      this.toast('篝火旁小憩片刻，队伍状态完全恢复。复活点已记录。')
+    } finally {
+      this.busy--
+      this.mark()
+    }
   }
 
   // ───────── 脚本 ─────────
@@ -649,6 +669,8 @@ export class Engine {
       a.mp = a.mmp
     }
     this.ui.dialog = null
+    const camp = CAMPS[this.mapId]
+    if (camp) this.checkpoint = { map: this.mapId, x: camp.rx, y: camp.ry }
     this.setMap(this.checkpoint.map)
     this.spawnNpcs()
     this.px = this.checkpoint.x

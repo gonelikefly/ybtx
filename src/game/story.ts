@@ -4,6 +4,7 @@ import './story2'
 import { NPC_LIST, TRIG_LIST, SIGN_MAP, D, npc } from './storyKit'
 import { PORTRAITS } from './data'
 import { ANCH } from './maps'
+import { buildCamps, CAMPS } from './camps'
 
 for (const w of MAP_LIST.hall.warps) {
   w.when = () => false
@@ -44,3 +45,6 @@ for (const [map, lines] of Object.entries(CROWD)) {
     npc({ id: `crowd_${map}_${i}`, name: '路人', map, x, y, look: LOOKS[(i + map.length) % LOOKS.length], wander: true, talk: D(`路人：${lines[i % lines.length]}`) })
   })
 }
+
+buildCamps()
+export { CAMPS }
