@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { GameCanvas } from './game/GameCanvas'
 import { engine, lookURL } from './game/engine'
 import type { BView } from './game/engine'
@@ -21,6 +21,20 @@ function Face({ who }: { who: string }) {
 
 function Pad({ d, label }: { d: Dir; label: string }) {
   const nav = d === UP ? 'up' : d === DOWN ? 'down' : d === LEFT ? 'left' : 'right'
+  useEffect(() => {
+    const release = () => engine.setHeld(d, false)
+    window.addEventListener('pointerup', release)
+    window.addEventListener('pointercancel', release)
+    window.addEventListener('touchend', release)
+    window.addEventListener('blur', release)
+    return () => {
+      window.removeEventListener('pointerup', release)
+      window.removeEventListener('pointercancel', release)
+      window.removeEventListener('touchend', release)
+      window.removeEventListener('blur', release)
+      release()
+    }
+  }, [d])
   return (
     <button
       className={`pad pad-${nav}`}
