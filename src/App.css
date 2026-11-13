@@ -121,3 +121,4 @@
   .menu-choice { bottom: 130px; left: 8px; right: 8px; max-width: none; }
   .obj { max-width: 70vw; font-size: 13px; }
 }
+.ver { position: absolute; right: 6px; bottom: 3px; z-index: 12; font-size: 9px; line-height: 1; color: rgba(255,255,255,.4); text-shadow: 0 1px 0 rgba(0,0,0,.6); pointer-events: none; letter-spacing: .02em; }

@@ -96,6 +96,7 @@ export default function App() {
   return (
     <div className="stage">
       <GameCanvas />
+      <div className="ver">{__APP_VERSION__}</div>
 
       {!u.started && !u.card && (
         <div className="title">
