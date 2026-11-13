@@ -358,6 +358,10 @@ export class Engine {
     a.mag = Math.round(t.mag + g.mag * n)
     a.spd = Math.round(t.spd + g.spd * n)
     a.skills = Array.from(new Set([...t.skills.filter(([l]) => l <= lv).map(([, s]) => s), ...(a.learned ?? [])]))
+    if (a.up) {
+      a.mhp += a.up.a * 10
+      a.mmp += a.up.c * 5
+    }
   }
   actor(id: string) {
     return this.roster.find((a) => a.id === id)
@@ -387,7 +391,11 @@ export class Engine {
     return msgs
   }
   eff(a: Actor) {
-    return { atk: a.atk + a.bonus.atk, def: a.def + a.bonus.def, mag: a.mag + a.bonus.mag }
+    const u = a.up ?? { w: 0, a: 0, c: 0 }
+    return { atk: a.atk + a.bonus.atk + u.w * 2, def: a.def + a.bonus.def + u.a * 2, mag: a.mag + a.bonus.mag + u.w + u.c * 2 }
+  }
+  skillLv(a: Actor | undefined, id: string) {
+    return a?.sl?.[id] ?? 1
   }
 
   // ───────── 地图 ─────────
@@ -796,6 +804,12 @@ export class Engine {
       case 'shop':
         await this.shop(s.items)
         break
+      case 'forge':
+        await this.forge()
+        break
+      case 'train':
+        await this.train()
+        break
       case 'learn': {
         const a = this.actor(s.who)
         if (a && !a.skills.includes(s.skill)) {
@@ -961,6 +975,89 @@ export class Engine {
     }
   }
 
+  // 装备强化 / 技能修炼
+  private fighters() {
+    return this.roster.filter((a) => ACTORS[a.id].growth.hp > 0)
+  }
+  private async forge() {
+    const SLOTS: { k: 'w' | 'a' | 'c'; name: string; eff: string }[] = [
+      { k: 'w', name: '武器', eff: '攻击+2 魔法+1' },
+      { k: 'a', name: '护甲', eff: '防御+2 生命上限+10' },
+      { k: 'c', name: '护符', eff: '魔法+2 魔力上限+5' },
+    ]
+    let who = 0
+    for (;;) {
+      const pool = this.fighters()
+      const wi = await this.askMenu('shop', `铁匠·强化装备  持有 ${this.gold} 金币`, pool.map((a) => {
+        const u = a.up ?? { w: 0, a: 0, c: 0 }
+        return { label: a.name, sub: `Lv.${a.lv}  武器+${u.w} 护甲+${u.a} 护符+${u.c}` }
+      }), true, who)
+      if (wi < 0) return
+      who = wi
+      const a = pool[wi]
+      let si = 0
+      for (;;) {
+        const u = (a.up ??= { w: 0, a: 0, c: 0 })
+        const cap = Math.min(10, 1 + Math.floor(a.lv / 3))
+        const items: MenuItem[] = SLOTS.map((s) => {
+          const n = u[s.k]
+          const cost = Math.round((40 * Math.pow(n + 1, 1.6)) / 5) * 5
+          if (n >= 10) return { label: `${s.name} +${n}`, sub: '已强化至极限', disabled: true }
+          if (n >= cap) return { label: `${s.name} +${n}`, sub: `${a.name}等级不足，暂时无法继续强化`, disabled: true }
+          return { label: `${s.name} +${n} → +${n + 1}`, sub: `${cost}金 · ${s.eff}`, disabled: this.gold < cost }
+        })
+        const j = await this.askMenu('shop', `${a.name}  持有 ${this.gold} 金币`, items, true, si)
+        if (j < 0) break
+        si = j
+        const s = SLOTS[j]
+        const cost = Math.round((40 * Math.pow(u[s.k] + 1, 1.6)) / 5) * 5
+        this.gold -= cost
+        u[s.k]++
+        const oh = a.mhp, om = a.mmp
+        this.recalc(a, a.lv)
+        a.hp = Math.min(a.mhp, a.hp + (a.mhp - oh))
+        a.mp = Math.min(a.mmp, a.mp + (a.mmp - om))
+        this.ui.gold = this.gold
+        this.toast(`${a.name} 的${s.name}强化到 +${u[s.k]}`)
+      }
+    }
+  }
+  private async train() {
+    let who = 0
+    for (;;) {
+      const pool = this.fighters()
+      const wi = await this.askMenu('shop', `导师·修炼技能  持有 ${this.gold} 金币`, pool.map((a) => ({ label: a.name, sub: `Lv.${a.lv}` })), true, who)
+      if (wi < 0) return
+      who = wi
+      const a = pool[wi]
+      let si = 0
+      for (;;) {
+        const list = a.skills.map((id) => SKILLS[id]).filter((s) => s.id !== 'atk' && s.kind !== 'buff')
+        if (!list.length) {
+          this.toast(`${a.name} 还没有可修炼的技能`)
+          break
+        }
+        const cap = Math.min(5, 1 + Math.floor(a.lv / 6))
+        const items: MenuItem[] = list.map((s) => {
+          const n = this.skillLv(a, s.id)
+          const cost = Math.round(((50 + s.mp * 10) * Math.pow(n, 1.5)) / 5) * 5
+          if (n >= 5) return { label: `${s.name} Lv.${n}`, sub: '已臻化境', disabled: true }
+          if (n >= cap) return { label: `${s.name} Lv.${n}`, sub: `${a.name}等级不足，暂时无法继续修炼`, disabled: true }
+          return { label: `${s.name} Lv.${n} → Lv.${n + 1}`, sub: `${cost}金 · 威力 +15%`, disabled: this.gold < cost }
+        })
+        const j = await this.askMenu('shop', `${a.name}  持有 ${this.gold} 金币`, items, true, si)
+        if (j < 0) break
+        si = j
+        const s = list[j]
+        const n = this.skillLv(a, s.id)
+        this.gold -= Math.round(((50 + s.mp * 10) * Math.pow(n, 1.5)) / 5) * 5
+        a.sl = { ...(a.sl ?? {}), [s.id]: n + 1 }
+        this.ui.gold = this.gold
+        this.toast(`${a.name} 的「${s.name}」提升到 Lv.${n + 1}`)
+      }
+    }
+  }
+
   // ───────── 菜单 ─────────
   private async fieldMenu() {
     this.busy++
@@ -976,7 +1073,8 @@ export class Engine {
         if (i === 0) {
           const lines = this.partyActors().map((a) => {
             const e = this.eff(a)
-            return `${a.name}  Lv.${a.lv}  生命 ${a.hp}/${a.mhp}  魔力 ${a.mp}/${a.mmp}  攻 ${e.atk}  防 ${e.def}  魔 ${e.mag}${a.weapon ? '  装备：' + a.weapon : ''}`
+            const u = a.up
+            return `${a.name}  Lv.${a.lv}  生命 ${a.hp}/${a.mhp}  魔力 ${a.mp}/${a.mmp}  攻 ${e.atk}  防 ${e.def}  魔 ${e.mag}${a.weapon ? '  装备：' + a.weapon : ''}${u ? `  强化：武器+${u.w} 护甲+${u.a} 护符+${u.c}` : ''}`
           })
           this.ui.info = { title: '队伍状态', lines }
           this.mark()
@@ -1232,7 +1330,10 @@ export class Engine {
       }
       if (i === 1) {
         const sks = b.skills.map((s) => SKILLS[s])
-        const m = sks.map((s) => ({ label: s.name, sub: `${s.mp}MP ${s.desc}`, disabled: b.mp < s.mp }))
+        const m = sks.map((s) => {
+          const n = this.skillLv(b.actor, s.id)
+          return { label: n > 1 ? `${s.name} Lv.${n}` : s.name, sub: `${s.mp}MP ${s.desc}`, disabled: b.mp < s.mp }
+        })
         const j = await this.askMenu('battle', '技能', m, true)
         if (j < 0) continue
         const s = sks[j]
@@ -1303,6 +1404,7 @@ export class Engine {
   }
   private async useSkill(b: Bt, sid: string, targets: Bt[]) {
     const s = SKILLS[sid]
+    const pow = s.pow * (1 + 0.15 * (this.skillLv(b.actor, sid) - 1))
     b.mp -= b.side === 'p' ? s.mp : 0
     const name = s.name
     await this.blog(sid === 'atk' ? `${b.name} 发动了攻击！` : `${b.name} 使用了「${name}」！`, 560)
@@ -1317,7 +1419,7 @@ export class Engine {
     for (const t of targets) {
       if (t.hp <= 0) continue
       if (s.kind === 'heal') {
-        const amt = Math.round(b.mag * s.pow + 12 + Math.random() * 6)
+        const amt = Math.round(b.mag * pow + 12 + Math.random() * 6)
         t.hp = Math.min(t.mhp, t.hp + amt)
         this.pop(t.side, t.idx, `+${amt}`, 'heal')
         continue
@@ -1329,7 +1431,7 @@ export class Engine {
         this.pop(t.side, t.idx, 'MISS', 'miss')
         continue
       }
-      let dmg = atk * s.pow - def * 0.55
+      let dmg = atk * pow - def * 0.55
       const crit = Math.random() < 0.08
       dmg = Math.max(1, Math.round(dmg * (0.88 + Math.random() * 0.24) * (crit ? 1.5 : 1)))
       t.hp -= dmg

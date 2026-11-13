@@ -15,6 +15,19 @@ export const TRIGGERS = TRIG_LIST
 export const SIGNS = SIGN_MAP
 export { INTRO }
 
+// 铁匠与导师：用金币强化装备、修炼技能
+const forgeNpc = (map: string, x: number, y: number) =>
+  npc({ id: `smith_${map}`, name: '铁匠', map, x, y, look: { hair: '#4a3222', top: '#7a4a2a', bot: '#3a2a22', accent: '#c8c8d0', beard: '#4a3222', style: 'bald' }, talk: [...D('铁匠：好钢要用金币喂。要强化武器、护甲还是护符？'), { t: 'forge' }] })
+const trainNpc = (map: string, x: number, y: number) =>
+  npc({ id: `tutor_${map}`, name: '导师', map, x, y, look: { hair: '#d8d8e8', top: '#3a5ea8', accent: '#4a70c0', style: 'hat', beard: '#d8d8e8' }, talk: [...D('导师：招式练得越熟，威力越大。付些学费，我来指点你们。'), { t: 'train' }] })
+forgeNpc('treebar', 3, 11)
+trainNpc('treebar', 6, 11)
+for (const map of ['capital', 'lioncity', 'redcity', 'hamburg', 'xilin']) {
+  const [px, py] = ANCH[map].plaza ?? [20, 16]
+  forgeNpc(map, px - 2, py - 2)
+  trainNpc(map, px + 2, py - 2)
+}
+
 // 城镇路人
 const CROWD: Record<string, string[]> = {
   capital: ['雪都的冬天很长，但王宫的炉火从不熄灭。', '听说有个叫艾米的少年，让国王免了狼头税。', '飞龙竞技场的票，一张能炒到三十金币。'],

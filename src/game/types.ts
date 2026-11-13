@@ -71,6 +71,8 @@ export type Step =
   | { t: 'timing'; title: string; hits: number; speed?: number }
   | { t: 'toast'; text: string }
   | { t: 'shop'; items: string[] }
+  | { t: 'forge' }
+  | { t: 'train' }
   | { t: 'learn'; who: string; skill: string }
   | { t: 'equip'; who: string; atk?: number; def?: number; mag?: number; name: string }
   | { t: 'lvl'; n: number }
@@ -148,6 +150,8 @@ export interface Actor {
   bonus: { atk: number; def: number; mag: number }
   weapon?: string
   learned?: string[]
+  up?: { w: number; a: number; c: number }
+  sl?: Record<string, number>
 }
 
 export interface EnemyTpl {
