@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 45 25% 94%;
+    --foreground: 102 10% 21%;
+    --card: 45 40% 98%;
+    --card-foreground: 102 10% 21%;
+    --popover: 45 40% 98%;
+    --popover-foreground: 102 10% 21%;
+    --primary: 100 20% 31%;
+    --primary-foreground: 45 40% 98%;
+    --secondary: 45 18% 91%;
+    --secondary-foreground: 102 10% 21%;
+    --muted: 45 18% 91%;
+    --muted-foreground: 88 6% 43%;
+    --accent: 90 20% 92%;
+    --accent-foreground: 100 20% 31%;
+    --destructive: 12 35% 41%;
+    --destructive-foreground: 45 40% 98%;
+    --border: 70 12% 82%;
+    --input: 70 12% 82%;
+    --ring: 100 20% 31%;
+    --radius: .5rem;
+    --paper: #f3f2ec;
+    --surface: #fcfaf5;
+    --surface-raised: #eeeee5;
+    --ink: #30392c;
+    --text-secondary: #5e6657;
+    --text-muted: #717767;
+    --line: #d6d9cb;
+    --forest: #4f633f;
+    --forest-soft: #e9eedf;
+    --interface-font: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --display-font: 'Noto Serif SC', 'Songti SC', serif;
+    --figure-font: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    --ease: cubic-bezier(.22, 1, .36, 1);
+  }
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; margin: 0; min-width: 320px; font-family: var(--interface-font); font-size: 14px; line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+  button, input, select { font: inherit; }
+  kbd { font-family: var(--figure-font); font-variant-numeric: tabular-nums; }
+  button, a, [role='button'] { -webkit-tap-highlight-color: transparent; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  button:focus-visible, a:focus-visible, canvas:focus-visible { outline: 2px solid #a67544; outline-offset: 4px; }
+  ::selection { background: #d1d7b7; color: #314632; }
+}
