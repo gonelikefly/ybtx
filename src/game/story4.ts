@@ -50,6 +50,8 @@ const DEATH: Step[] = [
 ※又一个古道热肠的人，远去了。长歌当哭。
 `),
   card(['池寒枫　卒。', '红石历五年冬，享年三十六岁。', '', '遗产：161 金币。', '遗书：「账本最后一页，是你的名字。」'], '巨星陨落'),
+  // card 结束会 fadeIn；此处再确保切到池傲天视角前画面已亮起
+  fadeIn,
   set('as', 2),
   { t: 'party', ids: ['chiao', 'daqs', 'lver'] },
   lvl(21),
@@ -277,6 +279,4 @@ trig('amy_return', 'hake', 22, 18, 8, 6, 24, [
 void npc
 void wait
 void flash
-void fadeOut
-void fadeIn
 void heal
