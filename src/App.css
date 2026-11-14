@@ -20,7 +20,8 @@
 .toast { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); max-width: 90vw; background: #1a2038ee; border: 2px solid #ffe27a; padding: 6px 16px; border-radius: 4px; font-size: 15px; animation: tt 2.2s ease both; pointer-events: none; text-align: center; z-index: 7; }
 @keyframes tt { 0% { opacity: 0 } 8%, 85% { opacity: 1 } 100% { opacity: 0 } }
 
-.dialog { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 clamp(8px, 3vw, 40px) clamp(10px, 3vh, 24px); display: flex; align-items: flex-end; gap: 10px; cursor: pointer; z-index: 5; }
+/* 须高于 .fade：fadeOut 后的旁白要叠在黑屏上可读可点，否则会卡死；全屏可点便于黑屏续谈 */
+.dialog { position: absolute; inset: 0; padding: 0 clamp(8px, 3vw, 40px) clamp(10px, 3vh, 24px); display: flex; align-items: flex-end; gap: 10px; cursor: pointer; z-index: 10; }
 .face { flex: 0 0 auto; width: 96px; height: 112px; background: #223a6c; border: 3px solid #f0e4b8; border-radius: 6px; display: grid; place-items: center; box-shadow: 0 3px 0 #0009; }
 .face img { height: 88px; width: auto; max-width: 88px; object-fit: contain; }
 .d-box { position: relative; flex: 1; min-height: 112px; background: #0f1a36f4; border: 3px solid #f0e4b8; border-radius: 6px; padding: 14px 18px 14px; box-shadow: 0 0 0 2px #1b2b58, 0 3px 0 #0009; }
