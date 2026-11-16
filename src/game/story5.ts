@@ -1,6 +1,6 @@
 import {
   D, trig, set, ch, obj, warp, show, hide, card, chapter, join, gold, battle, save, shake, flash,
-  cast, lvl, escale, give, heal,
+  cast, lvl, escale, give, heal, npc,
 } from './storyKit'
 import type { Step } from './types'
 import { VOL6_INTRO } from './story6'
@@ -127,8 +127,8 @@ trig('desert1', 'desert', 25, 18, 7, 4, 25, [
   }),
 ])
 
-// 覆盖祭坛四周（含北侧接近），避免只踩南侧或被地形挡住时无反应
-trig('sky1', 'skycity', 14, 11, 9, 10, 26, [
+const SKY1: Step[] = [
+  show('lg_sc', 17, 16),
   show('swh_sc', 19, 16),
   show('zhs_sc', 18, 12),
   ...D(`
@@ -178,7 +178,20 @@ trig('sky1', 'skycity', 14, 11, 9, 10, 26, [
       ...VOL6_INTRO,
     ],
   }),
-])
+]
+
+// 覆盖中央广场大部区域；读档时也会直接续开这段剧情
+trig('sky1', 'skycity', 10, 8, 16, 16, 26, SKY1)
+
+// 调查祭坛 / 与雷葛、水无痕对话也可进入（防踩格失效）
+npc({
+  id: 'altar_sc', name: '中央祭坛', map: 'skycity', x: 18, y: 13, prop: true, solid: false,
+  show: (f) => Number(f.ch) === 26 && !f.d_sky1,
+  talk: [
+    { t: 'set', flag: 'd_sky1', v: 1 },
+    ...SKY1,
+  ],
+})
 
 void gold
 void set

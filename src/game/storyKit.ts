@@ -54,9 +54,9 @@ export const npc = (def: NpcDef) => {
 export const when = (n: number): Cond => (f: Flags) => f.ch === n
 export const from = (n: number): Cond => (f: Flags) => f.ch >= n
 
-// 触发器：ch 精确匹配，且只触发一次
+// 触发器：ch 精确匹配，且只触发一次（Number 兼容存档里偶发的字符串章节号）
 export const trig = (id: string, map: string, x: number, y: number, w: number, h: number, c: number | Cond, run: Step[]) => {
-  const cond: Cond = typeof c === 'number' ? (f) => f.ch === c : c
+  const cond: Cond = typeof c === 'number' ? (f) => Number(f.ch) === c : c
   TRIG_LIST.push({ id, map, x, y, w, h, when: (f) => !f['d_' + id] && cond(f), run: [set('d_' + id), ...run] })
 }
 export const sign = (map: string, x: number, y: number, ...lines: string[]) => {
