@@ -149,7 +149,7 @@ export class MB {
 }
 
 const MAPS: Record<string, MapDef> = {}
-const CLEAR_IDS = ['dragonmt', 'hake', 'harbor', 'island', 'elfwood', 'goldtree', 'desert', 'lanisle', 'sealplat', 'xilin', 'lioncity', 'hamburg', 'redcity', 'capital']
+const CLEAR_IDS = ['dragonmt', 'hake', 'harbor', 'island', 'elfwood', 'goldtree', 'desert', 'lanisle', 'sealplat', 'xilin', 'lioncity', 'hamburg', 'redcity', 'capital', 'hanyang', 'fanshui', 'sanggan']
 const reg = (m: MB) => {
   if (CLEAR_IDS.includes(m.id)) m.clearAnchors(1)
   MAPS[m.id] = m.build()
@@ -868,13 +868,61 @@ for (let i = 0; i < DG.length; i++) {
   m.ell(17, 10, 8, 5, T.STONE)
   m.ell(17, 10, 5, 3, T.MARBLE)
   for (const [x, y] of [[12, 7], [22, 7], [12, 13], [22, 13]]) m.ob(x, y, T.PILLAR)
-  m.path([[17, 22], [17, 15]], T.DIRT, 1)
-  m.warp(17, 23, 'redcity', 24, 33, UP, { when: undefined })
+  m.path([[17, 22], [17, 10]], T.DIRT, 1)
+  m.warp(17, 23, 'redcity', 24, 33, UP, { when: (f) => Number(f.ch) !== 24 })
   m.anchor('gate', 17, 20)
   m.anchor('mid', 17, 10)
   reg(m)
 }
-// ═════════════════ 第五章：汉堡与天空之城 ═════════════════
+// ═════════════════ 第五章：汉阳、梵水、汉堡与天空之城 ═════════════════
+{
+  const m = new MB('hanyang', '汉阳', '桑干河', 40, 30, T.GRASS)
+  m.border(T.BRICK, 2, [18, 22, 28, 29])
+  m.path([[20, 29], [20, 4]], T.STONE, 1)
+  m.rect(14, 11, 13, 7, T.STONE)
+  m.house(5, 7, 5, 1, 2)
+  m.house(29, 7, 5, 2, 2)
+  m.house(5, 18, 5, 0, 2)
+  m.house(29, 18, 5, 4, 2)
+  m.ob(12, 14, T.CRATE)
+  m.ob(28, 14, T.BARREL)
+  m.anchor('start', 20, 26)
+  m.anchor('plaza', 20, 14)
+  m.anchor('gate', 20, 6)
+  m.enc = { rate: 0.035, groups: [{ ids: ['soldier'], w: 2 }, { ids: ['soldier', 'soldier'], w: 1 }] }
+  reg(m)
+}
+{
+  const m = new MB('fanshui', '梵水南岸', '花语平原', 44, 34, T.GRASS)
+  m.border(T.GPINE, 2, [20, 24, 32, 33])
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 44; x++) {
+    m.gr(x, y, T.LAVA)
+    m.ob(x, y, -1)
+  }
+  m.rect(0, 16, 44, 3, T.WATER)
+  m.path([[22, 33], [22, 8]], T.DIRT, 1, true)
+  m.anchor('start', 22, 30)
+  m.anchor('ford', 22, 17)
+  m.anchor('camp', 22, 10)
+  m.anchor('fire', 22, 7)
+  m.weather = 'ash'
+  m.enc = { rate: 0.04, groups: [{ ids: ['knight'], w: 2 }, { ids: ['soldier', 'soldier'], w: 2 }] }
+  reg(m)
+}
+{
+  const m = new MB('sanggan', '桑干河北岸', '艾米诺尔大陆', 36, 40, T.GRASS)
+  m.border(T.TREE, 2, [16, 20, 38, 39])
+  m.path([[18, 39], [18, 4]], T.DIRT, 1)
+  ;[[18, 32], [18, 25], [18, 18], [18, 12], [18, 6]].forEach(([x, y], i) => {
+    m.ell(x, y, 3, 2, T.MARBLE)
+    m.anchor('c' + (i + 1), x, y)
+  })
+  m.anchor('start', 18, 36)
+  m.forest([2, 2, 32, 36], 0.05, 151, [T.TREE, T.BUSH], 3)
+  m.enc = { rate: 0.045, groups: [{ ids: ['knight'], w: 2 }, { ids: ['soldier', 'knight'], w: 1 }] }
+  reg(m)
+}
+
 {
   const m = town('hamburg', '汉堡城', '艾米诺尔大陆', 44, 32, { ground: T.GRASS, road: T.STONE, roofs: [5, 0, 1, 2], wall: T.BRICK, seed: 51, trees: [T.TREE], plaza: T.STONE })
   m.anchor('wall', 22, 4)
@@ -981,5 +1029,48 @@ for (let i = 0; i < DG.length; i++) {
   reg(m)
 }
 
+
+function lane(
+  id: string, name: string, area: string, base: number, borderTile: number,
+  o: { weather?: MapDef['weather']; road?: number; enc?: MapDef['enc']; tint?: string; dark?: number } = {},
+) {
+  CLEAR_IDS.push(id)
+  const m = new MB(id, name, area, 30, 26, base)
+  m.border(borderTile, 2, [13, 17, 24, 25])
+  m.path([[15, 25], [15, 4]], o.road ?? T.DIRT, 1)
+  m.anchor('start', 15, 21)
+  m.anchor('gate', 15, 6)
+  if (o.weather) m.weather = o.weather
+  if (o.enc) m.enc = o.enc
+  if (o.tint) m.tint = o.tint
+  if (o.dark) m.dark = o.dark
+  reg(m)
+}
+const late = { rate: 0.03, groups: [{ ids: ['knight'], w: 2 }, { ids: ['soldier', 'soldier'], w: 1 }] }
+lane('council', '议政厅', '史坎布雷', T.MARBLE, T.INWALL, { road: T.CARPET })
+lane('duke', '公爵府门口', '史坎布雷', T.STONE, T.BRICK, { road: T.STONE })
+lane('silver', '三乡食为先', '西林', T.GRASS, T.TREE, { road: T.DIRT })
+lane('coast', '西林外海', '西林', T.SAND, T.ROCK, { weather: 'none', road: T.SAND })
+lane('nightbeach', '西林夜滩', '西林', T.SAND, T.ROCK, { road: T.DIRT, weather: 'none' })
+lane('parade', '点将台', '史坎布雷', T.STONE, T.BRICK, { road: T.STONE })
+lane('iceport', '断冰港', '艾米帝国', T.SNOW, T.SNOWROCK, { weather: 'snow', road: T.STONE, enc: late })
+lane('pasture', '地下公会', '妖精森林', T.DIRT, T.CAVEWALL, { dark: 0.35, road: T.DIRT })
+lane('waters', '精灵水境', '妖精森林', T.DARKGRASS, T.GPINE, { weather: 'petal', road: T.DIRT })
+lane('bonetower', '金系乞愿塔', '妖精森林', T.MARBLE, T.INWALL, { road: T.CARPET, dark: 0.2 })
+lane('snowroad', '雪山官道', '艾米帝国', T.SNOW, T.SNOWROCK, { weather: 'snow', road: T.STONE })
+lane('abyss', '万古深涧', '矮人矿区', T.DIRT, T.CAVEWALL, { dark: 0.45, road: T.DIRT })
+lane('river', '西西里河', '花语平原', T.GRASS, T.TREE, { road: T.DIRT, enc: late })
+lane('horn', '冰雪堡垒校军场', '冰封大陆', T.SNOW, T.PINE, { weather: 'snow', road: T.STONE })
+lane('icewall', '汉堡城墙', '汉堡', T.STONE, T.BRICK, { road: T.STONE, weather: 'ash' })
+lane('shrine', '天下圣殿', '牛腰', T.MARBLE, T.PILLAR, { road: T.CARPET, tint: 'rgba(40,40,60,0.15)' })
+lane('triumph', '界林凯旋门', '界林', T.STONE, T.BRICK, { road: T.STONE })
+lane('peach', '桃花湖', '界林', T.GRASS, T.TREE, { weather: 'petal', road: T.DIRT })
+lane('corona', '登基观礼台', '界岛', T.MARBLE, T.PILLAR, { road: T.CARPET, weather: 'petal' })
+lane('watermatch', '妖精水境擂台', '妖精森林', T.DARKGRASS, T.GPINE, { weather: 'petal', road: T.DIRT })
+lane('huayu', '花语平原', '法诺斯', T.GRASS, T.TREE, { weather: 'petal', road: T.DIRT, enc: late })
+lane('heartpool', '炼心池', '恶魔岛', T.DIRT, T.CAVEWALL, { dark: 0.4, road: T.DIRT, tint: 'rgba(80,40,20,0.2)' })
+lane('equinox', '春分象阵', '法诺斯', T.SAND, T.ROCK, { road: T.DIRT, enc: late })
+lane('deadmist', '死雾域', '通天塔下', T.DIRT, T.ROCK, { dark: 0.5, road: T.STONE, tint: 'rgba(20,20,30,0.25)' })
+lane('threshold', '沙若的门口', '黄金王国', T.GRASS, T.TREE, { weather: 'ash', road: T.DIRT })
 
 export const MAP_LIST = MAPS
