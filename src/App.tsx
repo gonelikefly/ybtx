@@ -4,7 +4,6 @@ import { engine, lookURL } from './game/engine'
 import type { BView } from './game/engine'
 import { PORTRAITS } from './game/data'
 import { DOWN, LEFT, RIGHT, UP } from './game/sprites'
-import type { Dir } from './game/sprites'
 import './App.css'
 
 if (import.meta.env.DEV) Object.assign(window, { __engine: engine })
