@@ -304,6 +304,8 @@ export class Engine {
       if (!raw) return false
       const d = JSON.parse(raw)
       this.flags = d.flags
+      // 剧情未推进时清掉半截触发锁，避免读档后踩进区域也无反应
+      if (this.flags.ch === 26) delete this.flags.d_sky1
       this.gold = d.gold
       this.inv = d.inv
       this.roster = d.roster
@@ -327,6 +329,8 @@ export class Engine {
       this.ui.menu = null
       this.mark()
       this.showBanner(this.map.name)
+      // 若读档时已站在触发区，补一次检测（否则要先走开再踩回来）
+      queueMicrotask(() => this.pollTriggersAt())
       return true
     } catch {
       return false
@@ -620,6 +624,7 @@ export class Engine {
     const sign = SIGNS[`${this.mapId}:${this.px + dx},${this.py + dy}`]
     if (sign) void this.runScript(sign.map((t) => ({ t: 'narr', text: t }) as Step))
     else if (this.map.o[ty * this.map.w + tx] === T.CAMPFIRE) void this.rest()
+    else if (this.map.o[ty * this.map.w + tx] === T.ALTAR) this.pollTriggersAt(tx, ty)
   }
   private async rest() {
     const c = CAMPS[this.mapId]
@@ -1565,6 +1570,19 @@ export class Engine {
     this.parity ^= 1
     this.steps++
   }
+  /** 检查指定格（默认当前格）是否命中剧情触发器 */
+  private pollTriggersAt(x = this.px, y = this.py) {
+    if (this.busy) return false
+    for (const t of TRIGGERS) {
+      if (t.map !== this.mapId) continue
+      const tw = t.w ?? 1, th = t.h ?? 1
+      if (x >= t.x && x < t.x + tw && y >= t.y && y < t.y + th && t.when(this.flags)) {
+        void this.runScript(t.run, t.id)
+        return true
+      }
+    }
+    return false
+  }
   private onArrive() {
     if (this.busy) return
     const w = this.map.warps.find((x) => x.x === this.px && x.y === this.py)
@@ -1576,14 +1594,7 @@ export class Engine {
       void this.runScript([{ t: 'warp', map: w.to, x: w.tx, y: w.ty, dir: w.dir }])
       return
     }
-    for (const t of TRIGGERS) {
-      if (t.map !== this.mapId) continue
-      const tw = t.w ?? 1, th = t.h ?? 1
-      if (this.px >= t.x && this.px < t.x + tw && this.py >= t.y && this.py < t.y + th && t.when(this.flags)) {
-        void this.runScript(t.run, t.id)
-        return
-      }
-    }
+    if (this.pollTriggersAt()) return
     const enc = this.map.enc
     if (enc) {
       this.encSteps++
