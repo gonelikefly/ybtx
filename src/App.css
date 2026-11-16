@@ -108,12 +108,8 @@
 
 .touch { display: none; position: absolute; left: 0; right: 0; bottom: 0; padding: 0 14px 18px; justify-content: space-between; align-items: flex-end; pointer-events: none; z-index: 3; }
 @media (pointer: coarse), (max-width: 760px) { .touch { display: flex; } }
-.dpad { position: relative; width: 156px; height: 156px; pointer-events: auto; }
-.pad { position: absolute; width: 52px; height: 52px; background: #0f1a36bb; border: 2px solid #f0e4b8aa; border-radius: 8px; }
-.pad-up { left: 52px; top: 0 } .pad-down { left: 52px; bottom: 0 } .pad-left { left: 0; top: 52px } .pad-right { right: 0; top: 52px }
-.pad::after { content: ''; position: absolute; left: 50%; top: 50%; border: 8px solid transparent; transform: translate(-50%, -50%); }
-.pad-up::after { border-bottom: 12px solid #f0e4b8; border-top: 0 } .pad-down::after { border-top: 12px solid #f0e4b8; border-bottom: 0 }
-.pad-left::after { border-right: 12px solid #f0e4b8; border-left: 0 } .pad-right::after { border-left: 12px solid #f0e4b8; border-right: 0 }
+.stick { position: relative; width: 148px; height: 148px; border-radius: 50%; pointer-events: auto; touch-action: none; background: radial-gradient(circle, rgba(15,26,54,.25) 40%, rgba(15,26,54,.72) 72%); border: 2px solid rgba(240,228,184,.7); }
+.stick-knob { position: absolute; left: 50%; top: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; background: rgba(240,228,184,.88); border: 2px solid #fff; box-shadow: 0 2px 0 #0006; }
 .btns { display: flex; gap: 14px; pointer-events: auto; align-items: flex-end; }
 .btns button { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #f0e4b8; font-size: 16px; font-weight: 800; color: #fff; }
 .b-a { background: #c8402a; } .b-b { background: #2f5aa8; width: 60px !important; height: 60px !important; }

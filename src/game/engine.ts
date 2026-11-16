@@ -60,7 +60,7 @@ export interface Pop {
 }
 export interface BView {
   bg: string
-  /** 剧情战：不会战败。血条旁显示标记，不用标题横幅 */
+  /** 剧情战：血条旁标「剧」。战败会重开这一场，不会直接算赢 */
   noLose: boolean
   enemies: BEnemyView[]
   party: BPartyView[]
@@ -1436,19 +1436,17 @@ export class Engine {
       }
     }
     if (result === 'lose' && o.noLose) {
-      for (const b of this.bts) {
-        if (b.side === 'p') {
-          b.hp = Math.max(b.hp, 1)
-          if (b.actor) b.actor.hp = Math.max(1, b.actor.hp)
-        }
+      await this.blog('战败了。重整之后，再战一次。', 800)
+      this.ui.battle = null
+      this.mark()
+      for (const a of this.partyActors()) {
+        a.hp = a.mhp
+        a.mp = a.mmp
       }
-      this.syncB()
-      await this.blog('千钧一发之际……', 900)
-      result = 'win'
-      this.flags.rescued = 1
+      return this.battle(o)
     }
     if (result === 'win') {
-      if (!this.flags.scripted && !this.flags.rescued) {
+      if (!this.flags.scripted) {
         let exp = 0, gold = 0
         const drops: string[] = []
         for (const t of eTpls) {
@@ -1476,7 +1474,6 @@ export class Engine {
       await this.blog('队伍全灭了……', 1000)
     }
     delete this.flags.scripted
-    delete this.flags.rescued
     this.ui.battle = null
     this.flashT = 300
     this.mark()
@@ -1696,10 +1693,7 @@ export class Engine {
     this.dir = d
     const [dx, dy] = DIRV[d]
     const nx = this.px + dx, ny = this.py + dy
-    if (!this.passable(nx, ny)) {
-      this.dirty = true
-      return
-    }
+    if (!this.passable(nx, ny)) return
     this.trail.unshift({ x: this.px, y: this.py })
     if (this.trail.length > 8) this.trail.pop()
     this.prevX = this.px
