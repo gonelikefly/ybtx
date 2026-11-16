@@ -2,7 +2,7 @@ import { MAP_LIST } from './maps'
 import { PORTRAITS } from './data'
 import {
   D, npc, trig, set, ch, obj, warp, show, hide, card, chapter, wait, give, gold, battle, save, heal, shake, flash,
-  fadeOut, fadeIn, timing, learn, cast, lvl, escale, face,
+  fadeOut, fadeIn, timing, learn, cast, lvl, escale, face, choice,
 } from './storyKit'
 import type { Step } from './types'
 import { VOL4_INTRO } from './story4'
@@ -105,24 +105,40 @@ trig('isl1', 'island', 14, 10, 5, 4, 17, [
   ...D(`
 ※三箭都中了。回程的时候，一支箭钉进莹的后背。火凤凰从云里落下，把她接走。
 帝国士兵：……三箭传名。不是城头上的人，是冰台上的那个女孩。
+艾米：全场我掌不了。只能选什么时候把两条龙投进去。风暴不分敌我，自己人必须先散开。
 `),
+          choice(
+            ['现在投入绿儿和要离', D('艾米：两条龙，现在。人已经退到冰面外面。')],
+            ['再等一轮', D('艾米：再等一轮。等自己人散开，再放风暴。')],
+          ),
+          timing('时空风暴', 3, 1.15),
           battle(['pope', 'soldier', 'soldier'], {
             bg: 'grass',
             win: [
               ...D(`
 ※教廷军团退却了。溜答坑的灯台烧了。莹还躺在凤凰背上，没有醒。
+※爬犁上点名。参战六百二十三人，阵亡一百七十六人，受伤三百八十四人。隆念一个名字，合一次眼，骨灰交回去。三箭不在这座城里。
 池傲天：（对大青山）……她的箭，不比我的枪差。
 大青山：（脸红）……是她射的。我只是看着。
 艾米：（凑过来）你们俩，一个冷脸，一个木头，天生是一对。
 池傲天：（冷冷）……你再说一遍。
 艾米：（后退）我什么都没说。
-※南丘的黑雾里，白衣龙骑士易海兰骑着吟风压下来，喊双方收兵。绿儿还想追。艾米拉住了它。易海兰没有开战，转去收狮子河沿线的空城。
+※南丘的黑雾里，白衣龙骑士易海兰骑着吟风压下来，喊双方收兵。
 `),
+              choice(
+                ['收兵', D('艾米：收兵。绿儿，回来。\n※易海兰没有开战，转去收狮子河沿线的空城。')],
+                ['咬住残兵', D('艾米：残兵可以追。人不要追进空城。\n※追出一箭之地就停了。易海兰仍去收狮子河沿线。')],
+                ['跟吟风开打', [
+                  ...D('绿儿：它先动的手。'),
+                  battle(['wyvern'], { bg: 'sky', noLose: true, title: '吟风' }),
+                  ...D('※只撞了一下。易海兰把吟风拉开，还是转去收空城。艾米没有再追。'),
+                ]],
+              ),
               hide('cd_lc'),
               hide('gen_lc'),
-              ch(19),
-              obj('出狮城南门，前往黄金古树'),
+              obj('出城之后先去点将台。双龙赌还没算完'),
               save,
+              warp('parade', 15, 21, 3),
             ],
           }),
         ],

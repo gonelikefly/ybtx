@@ -154,6 +154,8 @@ en({ id: 'skyguard', name: '天空之城魔像', hp: 320, atk: 50, def: 28, mag:
 en({ id: 'wyvern', name: '伪龙骑士·风', hp: 300, atk: 52, def: 24, mag: 12, spd: 13, exp: 240, gold: 90, skills: ['lance', 'windcut'], creature: { kind: 'rider', col: '#6aa88a' }, scale: 1.6 })
 en({ id: 'pirate', name: '海盗王骑士', hp: 300, atk: 42, def: 18, mag: 12, spd: 13, exp: 220, gold: 60, skills: ['slash', 'lance'], look: L('#1a1a22', '#3a3a44', { bot: '#22222a', accent: '#c8a050', style: 'hood', cape: '#2a2a32' }) })
 en({ id: 'titan', name: '泰坦', hp: 720, atk: 54, def: 24, mag: 8, spd: 7, exp: 480, gold: 0, skills: ['smash', 'godwrath'], creature: { kind: 'golem', col: '#8a7a62' }, scale: 2.2 })
+en({ id: 'deathmask', name: '死神法相', hp: 640, atk: 58, def: 28, mag: 20, spd: 12, exp: 400, gold: 0, skills: ['slash', 'darkfire'], look: L('#111118', '#2a2a32', { bot: '#1a1a22', accent: '#c8c8d8', style: 'hood', cape: '#111118' }), scale: 1.8 })
+en({ id: 'mammoth', name: '战象', hp: 680, atk: 56, def: 30, mag: 0, spd: 6, exp: 420, gold: 40, skills: ['smash', 'charge'], creature: { kind: 'beast', col: '#8a7a62' }, scale: 2 })
 
 export const ITEMS: Record<string, ItemDef> = {}
 const it = (id: string, name: string, kind: ItemDef['kind'], amount: number, price: number, desc: string) => {

@@ -1,7 +1,6 @@
 import { PORTRAITS } from './data'
 import { MAP_LIST } from './maps'
 import { UP } from './sprites'
-import { VOL3_INTRO } from './story3'
 import {
   D, npc, trig, sign, set, ch, obj, warp, show, hide, card, chapter, join, wait, give, gold, battle, save, heal, shake, flash,
   fadeOut, fadeIn, timing, learn, cast, lvl, escale, face,
@@ -142,26 +141,12 @@ trig('cap2', 'capital', 36, 14, 5, 5, 11, [
 池傲天：西林被范子爵攥在手里，他用海盗当借口，不肯把剑营交出来。叔叔说，你们去。
 艾米：去之前，我想看看你那头龙是怎么来的。
 池傲天：（沉默）……圣雪山。小黑死在那里。
+艾米：龙的事等议政厅散了再看。三只幻兽还没认完主。
 `),
-  set('as', 2),
-  warp('dragonmt', 24, 30, 0),
-  ...D(`
-※圣雪山。暴风雪里，池傲天用皮带背着两百斤的病龙往上爬。路边有冻死的人。
-池傲天：（低声）小黑，再撑一会儿。日食之前，门会关上。
-`),
-  timing('背龙过雪线', 5, 1.15),
-  ...D(`
-※他割开手腕，把血喂进龙嘴，撞进将要合上的圣园门。小黑死在血池边。尸身沉下去，龙卷和黑雷卷起历代幻兽的骨头，拼成死灵龙要离。寸延枪、尺关盾，落在雪里。
-池傲天：（单膝跪着）……从今天起，你叫要离。
-`),
-  set('as', 0),
-  join('chiao'),
   hide('hb_noble'),
-  ch(12),
-  card(['要离出生在圣雪山的血池里。', '池傲天回到港口时，已经是骨龙骑士。', '下一站，是范子爵不肯松手的西林。'], '寸延尺关'),
-  warp('xilin', 24, 32, 3),
-  obj('西林广场上，范子爵还在等'),
+  obj('去公爵府北侧的议政厅'),
   save,
+  warp('council', 15, 21, 3),
 ])
 cast('harbor', 'hb_noble', '池傲天', 12, 13, { line: '哼。' })
 npc({ id: 'hb_sailor', name: '水手', map: 'harbor', x: 12, y: 20, look: P.猎人.look, wander: true, talk: D('水手：从冰封大陆到这里，路上全靠海风。顺风半个月，逆风……看运气。') })
@@ -175,8 +160,8 @@ cast('xilin', 'gang1', '剑营老兵', 22, 16, { p: '士兵', dir: 0 })
 cast('xilin', 'gang2', '剑营老兵', 26, 16, { p: '士兵', dir: 0 })
 cast('xilin', 'xl_elder', '西林长者', 24, 19, { p: '哈伯老人', line: '西林……该属于谁呢？' })
 npc({ id: 'xl_inn', name: '旅店老板', map: 'xilin', x: 10, y: 18, look: P.老板.look, talk: [...D('旅店老板：住店吗？今晚免费，不为别的，为了谢你们。'), heal, { t: 'toast', text: '队伍状态完全恢复' }] })
-npc({ id: 'xl_shop', name: '商人', map: 'xilin', x: 30, y: 18, look: P.老板.look, talk: [...D('商人：自从黑帮倒了，生意好做多了。'), { t: 'shop', items: ['potion', 'hipotion', 'mpotion', 'revive'] }] })
-npc({ id: 'xl_v1', name: '居民', map: 'xilin', x: 16, y: 20, look: P.村民.look, wander: true, talk: (f) => f.ch >= 13 ? D('居民：多谢小佣兵团！我们总算能睡个安稳觉了。') : D('居民：别靠近广场，那里是黑帮的地盘。') })
+npc({ id: 'xl_shop', name: '商人', map: 'xilin', x: 30, y: 18, look: P.老板.look, talk: [...D('商人：剑营的饷发下来之后，生意好做多了。'), { t: 'shop', items: ['potion', 'hipotion', 'mpotion', 'revive'] }] })
+npc({ id: 'xl_v1', name: '居民', map: 'xilin', x: 16, y: 20, look: P.村民.look, wander: true, talk: (f) => f.ch >= 13 ? D('居民：多谢小佣兵团！剑营有饷了。') : D('居民：广场上是没发饷的剑营。范子爵还没交印。') })
 npc({ id: 'xl_v2', name: '居民', map: 'xilin', x: 34, y: 14, look: P.村民.look, wander: true, talk: D('居民：听说，精灵之森里住着真正的精灵。我小时候在森林边捡到过一片会发光的叶子……') })
 
 trig('xilin1', 'xilin', 20, 25, 9, 6, 12, [
@@ -213,9 +198,9 @@ trig('xilin1', 'xilin', 20, 25, 9, 6, 12, [
       hide('gang1'),
       hide('gang2'),
       hide('xl_elder'),
-      ch(13),
-      obj('西林南门外，是传说中的精灵之森。去看看吧'),
+      obj('先去三乡食为先。有人用一枚银币雇护送'),
       save,
+      warp('silver', 15, 21, 3),
     ],
   }),
 ])
@@ -335,9 +320,9 @@ trig('elf4', 'elfwood', 26, 38, 6, 5, 16, [
       card(['精灵之森的敌袭，只是开始。', '教廷、缅阳帝君、红石大帝……', '艾米诺尔大陆的火药桶，早已被人点燃了引线。', '', '——第二卷　英雄舞台　终'], '英雄舞台'),
       lvl(15),
       escale(2.8),
-      ch(17),
+      obj('西林外海。居民先撤，海滩上布朝天钉'),
       save,
-      ...VOL3_INTRO,
+      warp('coast', 15, 21, 3),
     ],
   }),
 ])

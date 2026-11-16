@@ -24,6 +24,7 @@ const ENC_SCALE: Record<string, number> = {
   frost: 1.15, dragonmt: 1.35, dragoncave: 1.25,
   dg1: 1.6, dg2: 1.8, dg3: 2, dg4: 2.15, dg5: 2.15, dg6: 2.45, dg7: 2.6,
   elfwood: 2.3, desert: 3.4, hanyang: 3.2, fanshui: 3.5, sanggan: 4,
+  iceport: 2.6, waters: 2.8, shrine: 3.6, huayu: 4.2, equinox: 4.4, deadmist: 4.6,
 }
 const PARTY_MAX = 8
 
