@@ -303,9 +303,9 @@ export class Engine {
       const raw = localStorage.getItem(SAVE_KEY)
       if (!raw) return false
       const d = JSON.parse(raw)
-      this.flags = d.flags
-      // 剧情未推进时清掉半截触发锁，避免读档后踩进区域也无反应
-      if (this.flags.ch === 26) delete this.flags.d_sky1
+      this.flags = d.flags ?? {}
+      // 章节号统一成数字，避免 === 匹配失败
+      if (this.flags.ch !== undefined) this.flags.ch = Number(this.flags.ch)
       this.gold = d.gold
       this.inv = d.inv
       this.roster = d.roster
@@ -327,14 +327,40 @@ export class Engine {
       this.spawnNpcs()
       this.ui.fade = 0
       this.ui.menu = null
+      // 天空之城祭坛卡关：未完成第 26 章时清锁、修正目标，并在本图直接续上剧情
+      if (this.flags.ch === 26) {
+        delete this.flags.d_sky1
+        this.flags.s_lg_sc = 1
+        this.flags.s_swh_sc = 1
+        delete this.flags.h_lg_sc
+        delete this.flags.h_swh_sc
+        this.ui.obj = '走近天空之城中央的祭坛（沿红毯往北，或调查祭坛）'
+        if (this.mapId === 'skycity') {
+          this.spawnNpcs()
+          this.mark()
+          this.showBanner(this.map.name)
+          queueMicrotask(() => this.resumeSkyAltar())
+          return true
+        }
+      }
       this.mark()
       this.showBanner(this.map.name)
-      // 若读档时已站在触发区，补一次检测（否则要先走开再踩回来）
       queueMicrotask(() => this.pollTriggersAt())
       return true
     } catch {
       return false
     }
+  }
+  /** 读档卡在天空之城祭坛时，直接续开 sky1，不再依赖踩格子 */
+  private resumeSkyAltar() {
+    if (this.busy || this.mapId !== 'skycity' || Number(this.flags.ch) !== 26) return
+    delete this.flags.d_sky1
+    const t = TRIGGERS.find((x) => x.id === 'sky1')
+    if (!t) {
+      this.pollTriggersAt()
+      return
+    }
+    void this.runScript(t.run, t.id)
   }
 
   // ───────── 角色 ─────────
