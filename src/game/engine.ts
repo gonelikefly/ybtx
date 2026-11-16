@@ -360,6 +360,19 @@ export class Engine {
         setTimeout(() => this.resumeSkyAltar(), 120)
         return true
       }
+      if (this.mapId === 'island' && Number(this.flags.ch) === 17 && /士兵|幸存者|营地/.test(String(this.ui.obj || ''))) {
+        delete this.flags.d_isl1
+        this.flags.s_ds0 = 1
+        this.flags.s_lh_is = 1
+        this.flags.s_ds1 = 1
+        this.flags.s_ds2 = 1
+        delete this.flags.h_ds0
+        delete this.flags.h_lh_is
+        delete this.flags.h_ds1
+        delete this.flags.h_ds2
+        this.spawnNpcs()
+        this.toast('伤员在正前方。面对他，按调查')
+      }
       setTimeout(() => this.pollTriggersAt(), 0)
       return true
     } catch {
@@ -697,7 +710,14 @@ export class Engine {
     }
     const sign = SIGNS[`${this.mapId}:${this.px + dx},${this.py + dy}`]
     if (sign) void this.runScript(sign.map((t) => ({ t: 'narr', text: t }) as Step))
-    else if (this.map.o[ty * this.map.w + tx] === T.CAMPFIRE) void this.rest()
+    else if (this.map.o[ty * this.map.w + tx] === T.CAMPFIRE) {
+      if (this.mapId === 'island' && Number(this.flags.ch) === 17) {
+        delete this.flags.d_isl1
+        this.pollTriggersAt(16, 16)
+        return
+      }
+      void this.rest()
+    }
     else if (this.mapId === 'skycity' && this.isSkyAltarStuck()) {
       this.toast('续开祭坛剧情…')
       this.resumeSkyAltar()

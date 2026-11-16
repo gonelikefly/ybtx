@@ -2,6 +2,7 @@ import { MAP_LIST } from './maps'
 import { PORTRAITS } from './data'
 import {
   D, npc, trig, set, ch, obj, warp, show, hide, card, chapter, wait, give, gold, battle, save, heal, shake, flash,
+  NPC_LIST, sign,
   fadeOut, fadeIn, timing, learn, cast, lvl, escale, face, choice,
 } from './storyKit'
 import type { Step } from './types'
@@ -31,10 +32,10 @@ export const VOL3_INTRO: Step[] = [
 林雨裳：（望着海面，脸色惨白）爹爹的舰队……
 艾米：（拍拍她的肩）先找人。
 `),
-  obj('向孤岛中央的营地走去，寻找幸存者'),
+  obj('海滩上有受伤的士兵。面对他，按「调查」'),
 ]
 
-trig('isl1', 'island', 14, 10, 5, 4, 17, [
+const ISLAND_CAMP: Step[] = [
   ...D(`
 林河：（独自站在篝火旁，铠甲破碎，左臂缠着绷带）……是你们。
 林雨裳：（扑上去）爹爹！
@@ -145,7 +146,28 @@ trig('isl1', 'island', 14, 10, 5, 4, 17, [
       }),
     ],
   }),
-])
+]
+
+trig('isl1', 'island', 13, 15, 8, 3, 17, ISLAND_CAMP)
+
+const islandTalk = (line: string) => (f: { ch?: number }): Step[] =>
+  Number(f.ch) === 17 ? [set('d_isl1', 1), ...ISLAND_CAMP] : D(line)
+for (const [id, line] of [
+  ['lh_is', '林河：先活下去，再谈别的。'],
+  ['ds1', '帝国溃兵：我们的舰队……全没了。'],
+  ['ds2', '帝国溃兵：水……谁有水？'],
+] as const) {
+  const n = NPC_LIST.find((x) => x.id === id)
+  if (!n) continue
+  n.show = (f) => Number(f.ch) === 17
+  n.talk = islandTalk(line)
+}
+npc({
+  id: 'ds0', name: '受伤的士兵', map: 'island', x: 16, y: 17, look: P.士兵.look, dir: 0,
+  show: (f) => Number(f.ch) === 17,
+  talk: islandTalk('受伤的士兵：……营火在北面。'),
+})
+sign('island', 16, 15, '营地篝火', '受伤的人在篝火旁边。面对他们，按调查。')
 
 // 永失我爱 / 王者归隐：古树之灵之后的夜晚
 export const GT2: Step[] = [
