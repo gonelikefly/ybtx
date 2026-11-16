@@ -304,7 +304,6 @@ export class Engine {
       if (!raw) return false
       const d = JSON.parse(raw)
       this.flags = d.flags ?? {}
-      // 章节号统一成数字，避免 === 匹配失败
       if (this.flags.ch !== undefined) this.flags.ch = Number(this.flags.ch)
       this.gold = d.gold
       this.inv = d.inv
@@ -327,37 +326,56 @@ export class Engine {
       this.spawnNpcs()
       this.ui.fade = 0
       this.ui.menu = null
-      // 天空之城祭坛卡关：未完成第 26 章时清锁、修正目标，并在本图直接续上剧情
-      if (this.flags.ch === 26) {
-        delete this.flags.d_sky1
-        this.flags.s_lg_sc = 1
-        this.flags.s_swh_sc = 1
-        delete this.flags.h_lg_sc
-        delete this.flags.h_swh_sc
-        this.ui.obj = '走近天空之城中央的祭坛（沿红毯往北，或调查祭坛）'
-        if (this.mapId === 'skycity') {
-          this.spawnNpcs()
-          this.mark()
-          this.showBanner(this.map.name)
-          queueMicrotask(() => this.resumeSkyAltar())
-          return true
-        }
-      }
       this.mark()
       this.showBanner(this.map.name)
-      queueMicrotask(() => this.pollTriggersAt())
+      // 不唯独依赖 ch===26：旧存档章节号可能对不上，但目标文案仍写着「祭坛」
+      if (this.isSkyAltarStuck()) {
+        this.prepareSkyAltarResume()
+        this.save(true)
+        this.toast('检测到祭坛卡关，正在续开剧情…')
+        setTimeout(() => this.resumeSkyAltar(), 120)
+        return true
+      }
+      setTimeout(() => this.pollTriggersAt(), 0)
       return true
     } catch {
       return false
     }
   }
-  /** 读档卡在天空之城祭坛时，直接续开 sky1，不再依赖踩格子 */
-  private resumeSkyAltar() {
-    if (this.busy || this.mapId !== 'skycity' || Number(this.flags.ch) !== 26) return
+  /** 天空之城 + 祭坛目标（或未过 27 章）即视为卡在祭坛前 */
+  private isSkyAltarStuck() {
+    if (this.mapId !== 'skycity') return false
+    const ch = Number(this.flags.ch)
+    if (Number.isFinite(ch) && ch >= 27) return false
+    const obj = String(this.ui.obj || '')
+    if (/祭坛/.test(obj)) return true
+    if (ch === 26) return true
+    // 沙海剧情已完成、人在天空之城，但章节未推进到通天塔之后
+    if (this.flags.d_desert1 && !(Number.isFinite(ch) && ch >= 27)) return true
+    return false
+  }
+  private prepareSkyAltarResume() {
+    this.flags.ch = 26
     delete this.flags.d_sky1
+    this.flags.s_lg_sc = 1
+    this.flags.s_swh_sc = 1
+    delete this.flags.h_lg_sc
+    delete this.flags.h_swh_sc
+    this.ui.obj = '走近天空之城中央的祭坛（读档将自动续开，也可调查祭坛）'
+    this.spawnNpcs()
+    this.mark()
+  }
+  /** 强制续开 sky1；不依赖踩格，也不再因章节号异常而跳过 */
+  private resumeSkyAltar() {
+    if (this.mapId !== 'skycity') return
+    if (this.busy) {
+      setTimeout(() => this.resumeSkyAltar(), 200)
+      return
+    }
+    this.prepareSkyAltarResume()
     const t = TRIGGERS.find((x) => x.id === 'sky1')
     if (!t) {
-      this.pollTriggersAt()
+      this.toast('未找到祭坛剧情，请反馈版本号')
       return
     }
     void this.runScript(t.run, t.id)
@@ -641,6 +659,12 @@ export class Engine {
       npc = find(tx, ty)
     }
     if (npc) {
+      // 卡在祭坛目标时，与雷葛/水无痕/祭坛对话都直接续开主线
+      if (this.isSkyAltarStuck() && (npc.def.id === 'lg_sc' || npc.def.id === 'swh_sc' || npc.def.id === 'altar_sc')) {
+        this.toast('续开祭坛剧情…')
+        this.resumeSkyAltar()
+        return
+      }
       if (!npc.def.prop) npc.dir = this.dir === DOWN ? UP : this.dir === UP ? DOWN : this.dir === LEFT ? RIGHT : LEFT
       const talk = npc.def.talk!
       const steps = typeof talk === 'function' ? talk(this.flags) : talk
@@ -650,7 +674,13 @@ export class Engine {
     const sign = SIGNS[`${this.mapId}:${this.px + dx},${this.py + dy}`]
     if (sign) void this.runScript(sign.map((t) => ({ t: 'narr', text: t }) as Step))
     else if (this.map.o[ty * this.map.w + tx] === T.CAMPFIRE) void this.rest()
-    else if (this.map.o[ty * this.map.w + tx] === T.ALTAR) this.pollTriggersAt(tx, ty)
+    else if (this.mapId === 'skycity' && this.isSkyAltarStuck()) {
+      this.toast('续开祭坛剧情…')
+      this.resumeSkyAltar()
+    } else if (this.map.o[ty * this.map.w + tx] === T.ALTAR) {
+      if (this.mapId === 'skycity') this.resumeSkyAltar()
+      else this.pollTriggersAt(tx, ty)
+    }
   }
   private async rest() {
     const c = CAMPS[this.mapId]
@@ -1116,9 +1146,25 @@ export class Engine {
     this.busy++
     try {
       for (;;) {
-        const items: MenuItem[] = [{ label: '队伍状态' }, { label: '使用道具' }, { label: '当前目标' }, { label: '保存进度' }, { label: '编队', disabled: !!this.flags.as }, { label: '关闭' }]
+        const stuck = this.isSkyAltarStuck()
+        const items: MenuItem[] = [
+          { label: '队伍状态' },
+          { label: '使用道具' },
+          { label: '当前目标' },
+          { label: '保存进度' },
+          { label: '编队', disabled: !!this.flags.as },
+          ...(stuck ? [{ label: '续开祭坛剧情' }] : []),
+          { label: '关闭' },
+        ]
+        const closeIdx = items.length - 1
+        const resumeIdx = stuck ? closeIdx - 1 : -1
         const i = await this.askMenu('field', `菜单  ${this.gold} 金币`, items, true)
-        if (i < 0 || i === 5) break
+        if (i < 0 || i === closeIdx) break
+        if (i === resumeIdx) {
+          this.toast('续开祭坛剧情…')
+          setTimeout(() => this.resumeSkyAltar(), 0)
+          break
+        }
         if (i === 4) {
           await this.formation()
           continue
@@ -1129,12 +1175,16 @@ export class Engine {
             const u = a.up
             return `${a.name}  Lv.${a.lv}  生命 ${a.hp}/${a.mhp}  魔力 ${a.mp}/${a.mmp}  攻 ${e.atk}  防 ${e.def}  魔 ${e.mag}${a.weapon ? '  装备：' + a.weapon : ''}${u ? `  强化：武器+${u.w} 护甲+${u.a} 护符+${u.c}` : ''}`
           })
+          lines.push('', `章节标记 ch=${this.flags.ch ?? '无'}  地图=${this.mapId}`)
           this.ui.info = { title: '队伍状态', lines }
           this.mark()
           await this.waitCard()
         } else if (i === 1) await this.itemMenu(false)
         else if (i === 2) {
-          this.ui.info = { title: '当前目标', lines: [this.ui.obj || '自由探索。', '', `所在：${this.map.name}`] }
+          this.ui.info = {
+            title: '当前目标',
+            lines: [this.ui.obj || '自由探索。', '', `所在：${this.map.name}`, `章节标记 ch=${this.flags.ch ?? '无'}`],
+          }
           this.mark()
           await this.waitCard()
         } else if (i === 3) this.save()
