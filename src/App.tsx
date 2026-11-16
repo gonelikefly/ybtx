@@ -1,10 +1,9 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useRef, useState, useSyncExternalStore } from 'react'
 import { GameCanvas } from './game/GameCanvas'
 import { engine, lookURL } from './game/engine'
 import type { BView } from './game/engine'
 import { PORTRAITS } from './game/data'
 import { DOWN, LEFT, RIGHT, UP } from './game/sprites'
-import type { Dir } from './game/sprites'
 import './App.css'
 
 if (import.meta.env.DEV) Object.assign(window, { __engine: engine })
@@ -19,35 +18,56 @@ function Face({ who }: { who: string }) {
   )
 }
 
-function Pad({ d, label }: { d: Dir; label: string }) {
-  const nav = d === UP ? 'up' : d === DOWN ? 'down' : d === LEFT ? 'left' : 'right'
-  useEffect(() => {
-    const release = () => engine.setHeld(d, false)
-    window.addEventListener('pointerup', release)
-    window.addEventListener('pointercancel', release)
-    window.addEventListener('touchend', release)
-    window.addEventListener('blur', release)
-    return () => {
-      window.removeEventListener('pointerup', release)
-      window.removeEventListener('pointercancel', release)
-      window.removeEventListener('touchend', release)
-      window.removeEventListener('blur', release)
-      release()
+function Stick() {
+  const base = useRef<HTMLDivElement>(null)
+  const [knob, setKnob] = useState({ x: 0, y: 0 })
+  const active = useRef<number | null>(null)
+  const release = () => {
+    active.current = null
+    setKnob({ x: 0, y: 0 })
+    engine.held = []
+  }
+  const aim = (clientX: number, clientY: number) => {
+    const el = base.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const cx = r.left + r.width / 2
+    const cy = r.top + r.height / 2
+    let dx = clientX - cx
+    let dy = clientY - cy
+    const len = Math.hypot(dx, dy)
+    const max = r.width * 0.36
+    const clamped = Math.min(len, max)
+    const ux = len > 0 ? dx / len : 0
+    const uy = len > 0 ? dy / len : 0
+    setKnob({ x: ux * clamped, y: uy * clamped })
+    if (len < 22) {
+      engine.held = []
+      return
     }
-  }, [d])
+    const dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? RIGHT : LEFT) : (dy > 0 ? DOWN : UP)
+    engine.held = [dir]
+  }
   return (
-    <button
-      className={`pad pad-${nav}`}
-      aria-label={label}
+    <div
+      ref={base}
+      className="stick"
+      aria-label="移动摇杆"
       onPointerDown={(e) => {
         e.preventDefault()
-        engine.setHeld(d, true)
-        engine.press(nav)
+        active.current = e.pointerId
+        e.currentTarget.setPointerCapture(e.pointerId)
+        aim(e.clientX, e.clientY)
       }}
-      onPointerUp={() => engine.setHeld(d, false)}
-      onPointerCancel={() => engine.setHeld(d, false)}
-      onPointerLeave={() => engine.setHeld(d, false)}
-    />
+      onPointerMove={(e) => {
+        if (active.current !== e.pointerId) return
+        aim(e.clientX, e.clientY)
+      }}
+      onPointerUp={release}
+      onPointerCancel={release}
+    >
+      <div className="stick-knob" style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} />
+    </div>
   )
 }
 
@@ -58,7 +78,16 @@ function BattleView({ b }: { b: BView }) {
         {b.enemies.map((e, i) => (
           <div key={e.uid} className={`b-enemy ${e.dead ? 'dead' : ''} ${b.hit && b.hit.side === 'e' && b.hit.idx === i ? 'hit' : ''}`}>
             <div className="b-name">{e.name}</div>
-            <div className="bar"><i style={{ width: `${(e.hp / e.mhp) * 100}%` }} /></div>
+            <div className="b-barline">
+              <div className="bar"><i style={{ width: `${(e.hp / e.mhp) * 100}%` }} /></div>
+              {b.noLose && (
+                <span className="b-fate" aria-label="剧情战">
+                  <svg viewBox="0 0 16 18" aria-hidden="true">
+                    <path d="M8 1.2 14 3.4v5.2c0 3.7-2.5 6.6-6 8.4-3.5-1.8-6-4.7-6-8.4V3.4Z" />
+                  </svg>
+                </span>
+              )}
+            </div>
             <img key={b.hit?.side === 'e' && b.hit.idx === i ? b.hit.n : 0} src={e.img} style={{ height: `${Math.round(104 * e.scale)}px` }} alt={e.name} />
             {b.pops.filter((p) => p.side === 'e' && p.idx === i).map((p) => (
               <span key={p.id} className={`pop ${p.kind}`}>{p.text}</span>
@@ -202,12 +231,7 @@ export default function App() {
 
       {u.started && !u.dialog && !menu && !u.battle && !u.timing && (
         <div className="touch">
-          <div className="dpad">
-            <Pad d={UP} label="上" />
-            <Pad d={LEFT} label="左" />
-            <Pad d={RIGHT} label="右" />
-            <Pad d={DOWN} label="下" />
-          </div>
+          <Stick />
           <div className="btns">
             <button className="b-b" onClick={() => engine.press('cancel')}>菜单</button>
             <button className="b-a" onClick={() => engine.press('confirm')}>调查</button>

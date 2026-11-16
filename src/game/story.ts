@@ -7,7 +7,7 @@ import { ANCH } from './maps'
 import { buildCamps, CAMPS } from './camps'
 
 for (const w of MAP_LIST.hall.warps) {
-  w.when = () => false
+  w.when = (f) => Number(f.ch) !== 29
   w.deny = D('艾米：答案，就在这座大殿里。现在还不能走。')
 }
 
