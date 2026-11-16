@@ -1,5 +1,5 @@
 import {
-  D, trig, set, ch, obj, warp, show, hide, card, chapter, leave, wait, gold, battle, save, shake, flash,
+  D, trig, set, ch, obj, warp, show, hide, card, chapter, leave, wait, gold, battle, save, shake, flash, sign,
   fadeOut, fadeIn, cast, lvl, escale, give, heal, timing,
 } from './storyKit'
 import type { Step } from './types'
@@ -190,10 +190,56 @@ export const VOL6_INTRO: Step[] = [
 易海兰：父神被刺过两次。第二次之后，神格快要溃了。我们上来，不是为了受封。
 艾米：我知道。池寒枫不在这支队伍里。他也不会再在。
 `),
-  card(['魔法历十三年，秋。', '易海兰、艾米，以及炼心池里活下来的人，带着湛蓝、流萤，登上通天塔。'], '通天塔'),
   hide('yhl_ln'),
   hide('bi_ln'),
   hide('yc_ln'),
+  obj('沿桑干河北岸往北，五处法阵都要踩过'),
+  save,
+  warp('sanggan', 18, 36, 3),
+]
+
+sign('sanggan', 18, 34, '桑干河北岸', '五个白石法阵沿着路排开。海盗王撕了漂浮卷轴，泰坦在最后一阵。')
+
+const sgSay = (n: number, text: string): Step[] => [
+  ...D(text),
+  set('sg' + n, 1),
+]
+trig('sg1', 'sanggan', 15, 30, 7, 4, 27, sgSay(1, `
+※第一阵亮了。林雨裳的水系从河里漫上北岸。
+艾米：五处一起开。少一处，浮城掉下来的时候没人接。
+`))
+trig('sg2', 'sanggan', 15, 23, 7, 4, (f) => Number(f.ch) === 27 && !!f.sg1, [
+  ...D(`
+※第二阵。海盗王骑士把漂浮卷轴撕了，人还站在塌下去的地面上。
+海盗王骑士：双王的法阵，也接不住撕掉的漂浮术。
+`),
+  battle(['pirate', 'knight'], { bg: 'grass', noLose: true, title: '撕卷轴的人' }),
+  set('sg2', 1),
+])
+trig('sg3', 'sanggan', 15, 16, 7, 4, (f) => Number(f.ch) === 27 && !!f.sg2, sgSay(3, `
+※第三阵是绿儿。第四阵还没亮，沙若的火已经先到了。
+沙若：剩下两处。别在中间停。
+`))
+trig('sg4', 'sanggan', 15, 10, 7, 4, (f) => Number(f.ch) === 27 && !!f.sg3, [
+  ...D(`
+※第四阵被铁链锁住。链子那头，是一头比城门还高的泰坦。
+`),
+  battle(['titan'], { bg: 'grass', noLose: true, title: '锁龙的链' }),
+  ...D(`
+※要离撕下巨人的头。池傲天砍断脚踝上的铁链，把龙放回去。
+池傲天：链断了。最后一阵。
+`),
+  set('sg4', 1),
+])
+trig('sg5', 'sanggan', 15, 4, 7, 4, (f) => Number(f.ch) === 27 && !!f.sg4, [
+  ...D(`
+※五处法阵同时亮完。海盗王的船队退向下游。艾米压上全线，只为把他们赶出桑干河。
+`),
+  battle(['pirate', 'titan'], { bg: 'grass', noLose: true, title: '双王屠龙' }),
+  ...D(`
+艾米：河岸干净了。神界的事，不能再拖。
+`),
+  card(['魔法历十三年，秋。', '桑干河北岸的五阵熄了。', '炼心池里活下来的人，带着湛蓝和流萤，转向通天塔。'], '双王屠龙'),
   ch(28),
   warp('heaven', 20, 26, 3),
   show('my_hv', 21, 24),
@@ -205,7 +251,7 @@ export const VOL6_INTRO: Step[] = [
 艾米：嗯。一千多个。
 ※身后，无数冒险者的脚步，震动了云海。
 `),
-]
+])
 
 trig('heaven1', 'heaven', 17, 3, 7, 5, 28, [
   show('sdl_hv', 20, 8),

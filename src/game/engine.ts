@@ -15,14 +15,15 @@ const TRAVEL: { ch: number; id: string }[] = [
   { ch: 8, id: 'dg1' }, { ch: 9, id: 'capital' }, { ch: 9, id: 'palace' }, { ch: 10, id: 'arena' },
   { ch: 12, id: 'harbor' }, { ch: 12, id: 'xilin' }, { ch: 13, id: 'elfwood' },
   { ch: 16, id: 'lioncity' }, { ch: 17, id: 'goldtree' }, { ch: 19, id: 'redcity' },
-  { ch: 21, id: 'hamburg' }, { ch: 21, id: 'redpalace' }, { ch: 25, id: 'desert' },
-  { ch: 26, id: 'skycity' }, { ch: 28, id: 'lanisle' }, { ch: 28, id: 'heaven' },
+  { ch: 21, id: 'hamburg' }, { ch: 21, id: 'redpalace' },
+  { ch: 25, id: 'hanyang' }, { ch: 25, id: 'fanshui' }, { ch: 26, id: 'desert' },
+  { ch: 26, id: 'skycity' }, { ch: 27, id: 'sanggan' }, { ch: 28, id: 'lanisle' }, { ch: 28, id: 'heaven' },
 ]
 /** 地图遭遇用本地强度，不跟后期剧情系数一起涨 */
 const ENC_SCALE: Record<string, number> = {
   frost: 1.15, dragonmt: 1.35, dragoncave: 1.25,
   dg1: 1.6, dg2: 1.8, dg3: 2, dg4: 2.15, dg5: 2.15, dg6: 2.45, dg7: 2.6,
-  elfwood: 2.3, desert: 3.4,
+  elfwood: 2.3, desert: 3.4, hanyang: 3.2, fanshui: 3.5, sanggan: 4,
 }
 const PARTY_MAX = 8
 

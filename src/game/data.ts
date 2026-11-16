@@ -152,6 +152,8 @@ en({ id: 'angel', name: '神殿天使', hp: 520, atk: 62, def: 30, mag: 50, spd:
 en({ id: 'warg', name: '战神法相', hp: 900, atk: 78, def: 36, mag: 20, spd: 13, exp: 1200, gold: 0, skills: ['smash', 'axe', 'godwrath'], look: PORTRAITS.战神.look, scale: 2.2 })
 en({ id: 'skyguard', name: '天空之城魔像', hp: 320, atk: 50, def: 28, mag: 30, spd: 8, exp: 260, gold: 60, skills: ['smash', 'holysmite'], creature: { kind: 'golem', col: '#9ab0d0' }, scale: 1.5 })
 en({ id: 'wyvern', name: '伪龙骑士·风', hp: 300, atk: 52, def: 24, mag: 12, spd: 13, exp: 240, gold: 90, skills: ['lance', 'windcut'], creature: { kind: 'rider', col: '#6aa88a' }, scale: 1.6 })
+en({ id: 'pirate', name: '海盗王骑士', hp: 300, atk: 42, def: 18, mag: 12, spd: 13, exp: 220, gold: 60, skills: ['slash', 'lance'], look: L('#1a1a22', '#3a3a44', { bot: '#22222a', accent: '#c8a050', style: 'hood', cape: '#2a2a32' }) })
+en({ id: 'titan', name: '泰坦', hp: 720, atk: 54, def: 24, mag: 8, spd: 7, exp: 480, gold: 0, skills: ['smash', 'godwrath'], creature: { kind: 'golem', col: '#8a7a62' }, scale: 2.2 })
 
 export const ITEMS: Record<string, ItemDef> = {}
 const it = (id: string, name: string, kind: ItemDef['kind'], amount: number, price: number, desc: string) => {

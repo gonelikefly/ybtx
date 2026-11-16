@@ -149,7 +149,7 @@ export class MB {
 }
 
 const MAPS: Record<string, MapDef> = {}
-const CLEAR_IDS = ['dragonmt', 'hake', 'harbor', 'island', 'elfwood', 'goldtree', 'desert', 'lanisle', 'sealplat', 'xilin', 'lioncity', 'hamburg', 'redcity', 'capital']
+const CLEAR_IDS = ['dragonmt', 'hake', 'harbor', 'island', 'elfwood', 'goldtree', 'desert', 'lanisle', 'sealplat', 'xilin', 'lioncity', 'hamburg', 'redcity', 'capital', 'hanyang', 'fanshui', 'sanggan']
 const reg = (m: MB) => {
   if (CLEAR_IDS.includes(m.id)) m.clearAnchors(1)
   MAPS[m.id] = m.build()
@@ -874,7 +874,55 @@ for (let i = 0; i < DG.length; i++) {
   m.anchor('mid', 17, 10)
   reg(m)
 }
-// ═════════════════ 第五章：汉堡与天空之城 ═════════════════
+// ═════════════════ 第五章：汉阳、梵水、汉堡与天空之城 ═════════════════
+{
+  const m = new MB('hanyang', '汉阳', '桑干河', 40, 30, T.GRASS)
+  m.border(T.BRICK, 2, [18, 22, 28, 29])
+  m.path([[20, 29], [20, 4]], T.STONE, 1)
+  m.rect(14, 11, 13, 7, T.STONE)
+  m.house(5, 7, 5, 1, 2)
+  m.house(29, 7, 5, 2, 2)
+  m.house(5, 18, 5, 0, 2)
+  m.house(29, 18, 5, 4, 2)
+  m.ob(12, 14, T.CRATE)
+  m.ob(28, 14, T.BARREL)
+  m.anchor('start', 20, 26)
+  m.anchor('plaza', 20, 14)
+  m.anchor('gate', 20, 6)
+  m.enc = { rate: 0.035, groups: [{ ids: ['soldier'], w: 2 }, { ids: ['soldier', 'soldier'], w: 1 }] }
+  reg(m)
+}
+{
+  const m = new MB('fanshui', '梵水南岸', '花语平原', 44, 34, T.GRASS)
+  m.border(T.GPINE, 2, [20, 24, 32, 33])
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 44; x++) {
+    m.gr(x, y, T.LAVA)
+    m.ob(x, y, -1)
+  }
+  m.rect(0, 16, 44, 3, T.WATER)
+  m.path([[22, 33], [22, 8]], T.DIRT, 1, true)
+  m.anchor('start', 22, 30)
+  m.anchor('ford', 22, 17)
+  m.anchor('camp', 22, 10)
+  m.anchor('fire', 22, 7)
+  m.weather = 'ash'
+  m.enc = { rate: 0.04, groups: [{ ids: ['knight'], w: 2 }, { ids: ['soldier', 'soldier'], w: 2 }] }
+  reg(m)
+}
+{
+  const m = new MB('sanggan', '桑干河北岸', '艾米诺尔大陆', 36, 40, T.GRASS)
+  m.border(T.TREE, 2, [16, 20, 38, 39])
+  m.path([[18, 39], [18, 4]], T.DIRT, 1)
+  ;[[18, 32], [18, 25], [18, 18], [18, 12], [18, 6]].forEach(([x, y], i) => {
+    m.ell(x, y, 3, 2, T.MARBLE)
+    m.anchor('c' + (i + 1), x, y)
+  })
+  m.anchor('start', 18, 36)
+  m.forest([2, 2, 32, 36], 0.05, 151, [T.TREE, T.BUSH], 3)
+  m.enc = { rate: 0.045, groups: [{ ids: ['knight'], w: 2 }, { ids: ['soldier', 'knight'], w: 1 }] }
+  reg(m)
+}
+
 {
   const m = town('hamburg', '汉堡城', '艾米诺尔大陆', 44, 32, { ground: T.GRASS, road: T.STONE, roofs: [5, 0, 1, 2], wall: T.BRICK, seed: 51, trees: [T.TREE], plaza: T.STONE })
   m.anchor('wall', 22, 4)

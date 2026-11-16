@@ -1,11 +1,13 @@
 import {
-  D, trig, set, ch, obj, warp, show, hide, card, chapter, join, gold, battle, save, shake, flash, choice,
+  D, trig, set, ch, obj, warp, show, hide, card, chapter, join, gold, battle, save, shake, flash, choice, sign,
   cast, lvl, escale, give, heal, npc,
 } from './storyKit'
 import type { Step } from './types'
 import { VOL6_INTRO } from './story6'
 
 cast('hamburg', 'lh_hb', '林河', 22, 20, { p: '汉蒙候爵', dir: 0, line: '汉堡，守得住。' })
+cast('hanyang', 'hy_guard', '守将席兰亚', 20, 6, { p: '士兵', dir: 0, line: '城门已关。' })
+cast('fanshui', 'fs_fire', '拜火祭祀', 24, 10, { p: '火神', dir: 2, line: '火起来之后，沿河撤回。' })
 cast('desert', 'fire_ds', '火神祭司', 31, 16, { p: '火神', dir: 2 })
 cast('desert', 'ly_ds', '凌云', 26, 22, { dir: 0 })
 cast('desert', 'chiao_ds', '池傲天', 30, 22, { dir: 2 })
@@ -66,13 +68,63 @@ export const VOL5_INTRO: Step[] = [
 `),
       hide('lh_hb'),
       ch(25),
-      obj('向南，走进浩瀚沙海。绿洲就在沙漠中央'),
+      obj('一百一十二骑换上法诺斯军服，从汉阳南门走到北城门'),
       save,
-      card(['魔法历五年，夏。小佣兵团悄悄离开汉堡，向南，进入了法诺斯大陆的腹地。', '浩瀚沙海。'], '魔法苦旅'),
-      warp('desert', 28, 36, 3),
+      card(['魔法历五年，夏。', '汉堡撤空之后，艾米没有直接进沙海。', '先是桑干河上的汉阳，再是梵水南岸的火海。'], '南线'),
+      warp('hanyang', 20, 26, 3),
     ],
   }),
 ]
+
+sign('hanyang', 20, 24, '汉阳南门', '北城门在路的尽头。军服已经换上，流苏先别揭。')
+sign('fanshui', 22, 28, '梵水南岸', '酒和自燃球送到对岸营边。火一起，沿原路撤回。北面的火海走不进去。')
+sign('fanshui', 22, 8, '火海', '双修罗已经烧起来了。不要冲进去。')
+
+trig('hanyang1', 'hanyang', 17, 4, 7, 5, 25, [
+  show('hy_guard', 20, 6),
+  ...D(`
+※一百一十二骑穿着法诺斯军服，从南门一直骑到北城门。河北的卡子已经放进了伪装商队。
+守将席兰亚：（按剑）口令。你们是哪一营？
+艾米：（勒马，把七彩流苏揭开）三个问题。城是谁的。人是谁的。你还想为谁守。
+`),
+  battle(['soldier', 'soldier', 'knight'], { bg: 'grass', noLose: true, title: '汉阳北门' }),
+  ...D(`
+※城头静了一息。席兰亚把剑横在膝上，自己倒了下去。满城三呼，日不移影，汉阳定了。
+大青山：下一处是梵水。池傲天的人把劳军酒已经送到营边了。
+艾米：火一起就撤。谁冲进火海，谁自己负责。
+`),
+  hide('hy_guard'),
+  obj('渡过梵水，把酒和自燃球送到北岸营边，然后沿原路撤回'),
+  save,
+  warp('fanshui', 22, 30, 3),
+])
+
+trig('fanshui1', 'fanshui', 19, 8, 7, 5, (f) => Number(f.ch) === 25 && !f.fanshui_go, [
+  show('fs_fire', 24, 10),
+  ...D(`
+拜火祭祀：酒已经进了他们的营。龙骑士被引去东边。自燃球可以扔了。
+艾米：扔完就走。双修罗一出，这片河岸不是人待的。
+`),
+  battle(['knight', 'knight'], { bg: 'fire', noLose: true, title: '梵水营边' }),
+  shake,
+  ...D(`
+※自燃球落下。拜火教隔了千年，再次放出双修罗。北岸成了火海，烧了四天三夜。
+拜火祭祀：原路。现在就原路。
+`),
+  set('fanshui_go', 1),
+  hide('fs_fire'),
+  obj('沿河南岸撤回南营。北面的火海走不进去'),
+])
+
+trig('fanshui2', 'fanshui', 19, 26, 7, 5, (f) => !!f.fanshui_go && !f.d_fanshui2, [
+  ...D(`
+※南营还在。火在河对岸，没有追过桥。
+艾米：人齐了就走。沙海那边，池傲天的远征军还在。
+`),
+  obj('向南，走进浩瀚沙海。绿洲就在沙漠中央'),
+  save,
+  warp('desert', 28, 36, 3),
+])
 
 trig('desert1', 'desert', 25, 18, 7, 4, 25, [
   show('fire_ds', 31, 16),
