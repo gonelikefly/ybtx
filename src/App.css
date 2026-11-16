@@ -67,11 +67,11 @@
 .bar.hp i { background: linear-gradient(#7ae07a, #3a9a3a); }
 .bar.mp i { background: linear-gradient(#7ab8f8, #3a6ac8); }
 .bar.mp { height: 5px; }
-.b-party { display: flex; gap: clamp(6px, 2vw, 16px); justify-content: flex-start; flex-wrap: wrap; margin-bottom: 150px; }
-.b-member { position: relative; display: flex; align-items: flex-end; gap: 8px; background: #0a1226cc; border: 2px solid #f0e4b866; border-radius: 6px; padding: 6px 8px; min-width: 190px; transition: transform .2s; }
+.b-party { display: flex; gap: 8px; justify-content: flex-start; flex-wrap: wrap; align-content: flex-end; margin-bottom: 168px; max-height: 46vh; overflow: auto; }
+.b-member { position: relative; display: flex; align-items: flex-end; gap: 6px; background: #0a1226cc; border: 2px solid #f0e4b866; border-radius: 6px; padding: 4px 6px; flex: 1 1 148px; max-width: 210px; transition: transform .2s; }
 .b-member.acting { transform: translateY(-10px); border-color: #ffe27a; }
 .b-member.dead { opacity: .45; filter: grayscale(1); }
-.b-member img { height: 84px; }
+.b-member img { height: 58px; }
 .b-card { font-size: 13px; line-height: 1.2; }
 .b-card small { color: #bcd0ee; }
 .b-card .bar { width: 110px; margin: 3px 0 0; }

@@ -24,6 +24,7 @@ const ENC_SCALE: Record<string, number> = {
   dg1: 1.6, dg2: 1.8, dg3: 2, dg4: 2.15, dg5: 2.15, dg6: 2.45, dg7: 2.6,
   elfwood: 2.3, desert: 3.4,
 }
+const PARTY_MAX = 8
 
 export interface MenuItem {
   label: string
@@ -329,6 +330,7 @@ export class Engine {
       this.inv = d.inv
       this.roster = d.roster
       this.party = d.party
+      this.sanitizeParty()
       this.npcPos = d.npcPos ?? {}
       this.checkpoint = d.checkpoint
       this.ui.obj = d.obj ?? ''
@@ -784,6 +786,7 @@ export class Engine {
       }
       case 'set':
         this.flags[s.flag] = s.v ?? 1
+        if (s.flag === 'ch' || s.flag === 'as' || s.flag === 'gone_chi' || s.flag === 'gone_daqs') this.sanitizeParty()
         break
       case 'add':
         this.flags[s.flag] = (this.flags[s.flag] ?? 0) + (s.v ?? 1)
@@ -814,19 +817,21 @@ export class Engine {
         await this.fadeTo(s.to, 500)
         break
       case 'join': {
+        if (this.unavailable(s.id)) break
         if (!this.actor(s.id)) this.addActor(s.id, this.avgLv())
         if (!this.party.includes(s.id)) {
-          if (this.party.length < 4) this.party.push(s.id)
+          if (this.party.length < PARTY_MAX) this.party.push(s.id)
+          else this.toast(`${ACTORS[s.id].name} 记入名册，出战已满 ${PARTY_MAX} 人`)
         }
-        this.toast(`${ACTORS[s.id].name} 加入了队伍`)
+        if (this.party.includes(s.id)) this.toast(`${ACTORS[s.id].name} 加入了队伍`)
         break
       }
       case 'leave':
         this.party = this.party.filter((x) => x !== s.id)
         break
       case 'party':
-        for (const id of s.ids) if (!this.actor(id)) this.addActor(id, this.avgLv())
-        this.party = s.ids.slice(0, 4)
+        for (const id of s.ids) if (!this.actor(id) && !this.unavailable(id)) this.addActor(id, this.avgLv())
+        this.party = s.ids.filter((id) => !this.unavailable(id)).slice(0, PARTY_MAX)
         break
       case 'give':
         this.inv[s.item] = (this.inv[s.item] ?? 0) + (s.n ?? 1)
@@ -1001,7 +1006,7 @@ export class Engine {
       if (w.kind === 'p') {
         this.dir = d
         this.trail.unshift({ x: this.px, y: this.py })
-        if (this.trail.length > 8) this.trail.pop()
+        if (this.trail.length > 16) this.trail.pop()
         this.prevX = this.px
         this.prevY = this.py
         this.px += dx
@@ -1245,16 +1250,33 @@ export class Engine {
     }
     return out
   }
+  /** 剧情上已经退场的人，不能再编进后期队伍 */
+  private unavailable(id: string) {
+    const ch = Number(this.flags.ch) || 0
+    if (id === 'chi' && (this.flags.gone_chi || (ch >= 23 && this.flags.as !== 1))) return true
+    if (id === 'daqs' && this.flags.gone_daqs) return true
+    return false
+  }
+  private sanitizeParty() {
+    this.party = this.party.filter((id) => !!ACTORS[id] && !this.unavailable(id)).slice(0, PARTY_MAX)
+    if (!this.flags.as && this.actor('amy') && !this.party.includes('amy')) this.party.unshift('amy')
+    if (!this.party.length) this.party = this.flags.as === 1 && !this.unavailable('chi') ? ['chi'] : ['amy']
+    this.party = this.party.slice(0, PARTY_MAX)
+  }
   private async formation() {
     for (;;) {
-      const pool = this.roster.filter((a) => ACTORS[a.id].growth.hp > 0)
+      const pool = this.roster.filter((a) => ACTORS[a.id].growth.hp > 0 && !this.unavailable(a.id))
       const items = pool.map((a) => ({ label: `${this.party.includes(a.id) ? '【出战】' : '　　　　'}${a.name}`, sub: `Lv.${a.lv}`, disabled: a.id === 'amy' }))
-      const i = await this.askMenu('field', '编队（最多4人）', items, true)
+      const i = await this.askMenu('field', `编队（最多${PARTY_MAX}人）`, items, true)
       if (i < 0) return
       const id = pool[i].id
+      if (this.unavailable(id)) {
+        this.toast('这个人已经不在了')
+        continue
+      }
       if (this.party.includes(id)) this.party = this.party.filter((x) => x !== id)
-      else if (this.party.length < 4) this.party.push(id)
-      else this.toast('队伍已满')
+      else if (this.party.length < PARTY_MAX) this.party.push(id)
+      else this.toast(`队伍最多 ${PARTY_MAX} 人`)
       this.mark()
     }
   }
@@ -1695,7 +1717,7 @@ export class Engine {
     const nx = this.px + dx, ny = this.py + dy
     if (!this.passable(nx, ny)) return
     this.trail.unshift({ x: this.px, y: this.py })
-    if (this.trail.length > 8) this.trail.pop()
+    if (this.trail.length > 16) this.trail.pop()
     this.prevX = this.px
     this.prevY = this.py
     this.px = nx
