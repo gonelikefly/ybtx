@@ -80,7 +80,13 @@ function BattleView({ b }: { b: BView }) {
             <div className="b-name">{e.name}</div>
             <div className="b-barline">
               <div className="bar"><i style={{ width: `${(e.hp / e.mhp) * 100}%` }} /></div>
-              {b.noLose && <span className="b-fate">剧</span>}
+              {b.noLose && (
+                <span className="b-fate" aria-label="剧情战">
+                  <svg viewBox="0 0 16 18" aria-hidden="true">
+                    <path d="M8 1.2 14 3.4v5.2c0 3.7-2.5 6.6-6 8.4-3.5-1.8-6-4.7-6-8.4V3.4Z" />
+                  </svg>
+                </span>
+              )}
             </div>
             <img key={b.hit?.side === 'e' && b.hit.idx === i ? b.hit.n : 0} src={e.img} style={{ height: `${Math.round(104 * e.scale)}px` }} alt={e.name} />
             {b.pops.filter((p) => p.side === 'e' && p.idx === i).map((p) => (

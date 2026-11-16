@@ -60,7 +60,7 @@ export interface Pop {
 }
 export interface BView {
   bg: string
-  /** 剧情战：血条旁标「剧」。战败会重开这一场，不会直接算赢 */
+  /** 剧情战：血条旁显示盾牌。战败会重开这一场，不会直接算赢 */
   noLose: boolean
   enemies: BEnemyView[]
   party: BPartyView[]
