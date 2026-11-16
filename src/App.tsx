@@ -58,7 +58,10 @@ function BattleView({ b }: { b: BView }) {
         {b.enemies.map((e, i) => (
           <div key={e.uid} className={`b-enemy ${e.dead ? 'dead' : ''} ${b.hit && b.hit.side === 'e' && b.hit.idx === i ? 'hit' : ''}`}>
             <div className="b-name">{e.name}</div>
-            <div className="bar"><i style={{ width: `${(e.hp / e.mhp) * 100}%` }} /></div>
+            <div className="b-barline">
+              <div className="bar"><i style={{ width: `${(e.hp / e.mhp) * 100}%` }} /></div>
+              {b.noLose && <span className="b-fate">剧</span>}
+            </div>
             <img key={b.hit?.side === 'e' && b.hit.idx === i ? b.hit.n : 0} src={e.img} style={{ height: `${Math.round(104 * e.scale)}px` }} alt={e.name} />
             {b.pops.filter((p) => p.side === 'e' && p.idx === i).map((p) => (
               <span key={p.id} className={`pop ${p.kind}`}>{p.text}</span>

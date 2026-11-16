@@ -57,6 +57,9 @@
 .b-enemy.hit img, .b-member img.hit { animation: shk .35s; }
 @keyframes shk { 20% { transform: translateX(-6px); filter: brightness(2) } 40% { transform: translateX(6px) } 60% { transform: translateX(-4px) } }
 .b-name { font-size: 13px; font-weight: 700; background: #0008; padding: 0 8px; border-radius: 3px; margin-bottom: 2px; }
+.b-barline { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.b-barline .bar { margin-bottom: 0; }
+.b-fate { flex: 0 0 auto; font-size: 10px; font-weight: 800; line-height: 12px; color: #2a1c08; background: #e0b64a; border-radius: 2px; padding: 0 3px; }
 .bar { width: 90px; height: 7px; background: #0009; border: 1px solid #000; border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
 .bar i { display: block; height: 100%; background: linear-gradient(#f06a5a, #c03a2a); transition: width .4s; }
 .bar.hp i { background: linear-gradient(#7ae07a, #3a9a3a); }

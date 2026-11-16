@@ -8,6 +8,22 @@ import type { Actor, BattleOpts, EnemyTpl, Flags, MapDef, NpcDef, Step } from '.
 
 const DIRV: [number, number][] = [[0, 1], [-1, 0], [1, 0], [0, -1]]
 const SAVE_KEY = 'yongbing_tianxia_save_v1'
+/** 章节到达后可从菜单回到这些地点的篝火旁（不含室内小屋与终局大殿） */
+const TRAVEL: { ch: number; id: string }[] = [
+  { ch: 0, id: 'hake' }, { ch: 1, id: 'frost' }, { ch: 2, id: 'treebar' },
+  { ch: 3, id: 'dragonmt' }, { ch: 5, id: 'inn' }, { ch: 6, id: 'dragoncave' },
+  { ch: 8, id: 'dg1' }, { ch: 9, id: 'capital' }, { ch: 9, id: 'palace' }, { ch: 10, id: 'arena' },
+  { ch: 12, id: 'harbor' }, { ch: 12, id: 'xilin' }, { ch: 13, id: 'elfwood' },
+  { ch: 16, id: 'lioncity' }, { ch: 17, id: 'goldtree' }, { ch: 19, id: 'redcity' },
+  { ch: 21, id: 'hamburg' }, { ch: 21, id: 'redpalace' }, { ch: 25, id: 'desert' },
+  { ch: 26, id: 'skycity' }, { ch: 28, id: 'lanisle' }, { ch: 28, id: 'heaven' },
+]
+/** 地图遭遇用本地强度，不跟后期剧情系数一起涨 */
+const ENC_SCALE: Record<string, number> = {
+  frost: 1.15, dragonmt: 1.35, dragoncave: 1.25,
+  dg1: 1.6, dg2: 1.8, dg3: 2, dg4: 2.15, dg5: 2.15, dg6: 2.45, dg7: 2.6,
+  elfwood: 2.3, desert: 3.4,
+}
 
 export interface MenuItem {
   label: string
@@ -44,6 +60,8 @@ export interface Pop {
 }
 export interface BView {
   bg: string
+  /** 剧情战：不会战败。血条旁显示标记，不用标题横幅 */
+  noLose: boolean
   enemies: BEnemyView[]
   party: BPartyView[]
   log: string
@@ -155,6 +173,8 @@ export class Engine {
   trail: { x: number; y: number }[] = []
   npcs: NpcInst[] = []
   busy = 0
+  /** 遭遇战临时强度；剧情战为 null，用 flags.escale */
+  private fightScale: number | null = null
   held: Dir[] = []
   run = false
   steps = 0
@@ -1147,12 +1167,15 @@ export class Engine {
     try {
       for (;;) {
         const stuck = this.isSkyAltarStuck()
+        const lock = this.sceneLocked()
+        const places = lock ? [] : this.travelPlaces()
         const items: MenuItem[] = [
           { label: '队伍状态' },
           { label: '使用道具' },
           { label: '当前目标' },
           { label: '保存进度' },
           { label: '编队', disabled: !!this.flags.as },
+          { label: '前往', disabled: !places.length, sub: lock ?? (places.length ? `${places.length} 处` : undefined) },
           ...(stuck ? [{ label: '续开祭坛剧情' }] : []),
           { label: '关闭' },
         ]
@@ -1165,6 +1188,17 @@ export class Engine {
           setTimeout(() => this.resumeSkyAltar(), 0)
           break
         }
+        if (i === 5) {
+          if (lock) {
+            this.toast(lock)
+            continue
+          }
+          const j = await this.askMenu('field', '前往', places.map((p) => ({ label: p.name, sub: p.area })), true)
+          if (j < 0) continue
+          const p = places[j]
+          await this.warpTo(p.id, p.x, p.y, DOWN)
+          break
+        }
         if (i === 4) {
           await this.formation()
           continue
@@ -1175,16 +1209,12 @@ export class Engine {
             const u = a.up
             return `${a.name}  Lv.${a.lv}  生命 ${a.hp}/${a.mhp}  魔力 ${a.mp}/${a.mmp}  攻 ${e.atk}  防 ${e.def}  魔 ${e.mag}${a.weapon ? '  装备：' + a.weapon : ''}${u ? `  强化：武器+${u.w} 护甲+${u.a} 护符+${u.c}` : ''}`
           })
-          lines.push('', `章节标记 ch=${this.flags.ch ?? '无'}  地图=${this.mapId}`)
           this.ui.info = { title: '队伍状态', lines }
           this.mark()
           await this.waitCard()
         } else if (i === 1) await this.itemMenu(false)
         else if (i === 2) {
-          this.ui.info = {
-            title: '当前目标',
-            lines: [this.ui.obj || '自由探索。', '', `所在：${this.map.name}`, `章节标记 ch=${this.flags.ch ?? '无'}`],
-          }
+          this.ui.info = { title: '当前目标', lines: [this.ui.obj || '自由探索。', '', `所在：${this.map.name}`] }
           this.mark()
           await this.waitCard()
         } else if (i === 3) this.save()
@@ -1192,6 +1222,28 @@ export class Engine {
     } finally {
       this.busy--
     }
+  }
+  /** 本地图所有出口都被剧情拦住时，传送同样不可用 */
+  private sceneLocked(): string | null {
+    const ws = this.map.warps
+    if (!ws.length) return null
+    const open = ws.some((w) => !w.when || w.when(this.flags))
+    if (open) return null
+    return '现在还不能离开这里。'
+  }
+  private travelPlaces() {
+    const ch = Number(this.flags.ch) || 0
+    const seen = new Set<string>()
+    const out: { id: string; name: string; area: string; x: number; y: number }[] = []
+    for (const t of TRAVEL) {
+      if (ch < t.ch || t.id === this.mapId || seen.has(t.id)) continue
+      const camp = CAMPS[t.id]
+      const map = MAP_LIST[t.id]
+      if (!camp || !map) continue
+      seen.add(t.id)
+      out.push({ id: t.id, name: map.name, area: map.area, x: camp.rx, y: camp.ry })
+    }
+    return out
   }
   private async formation() {
     for (;;) {
@@ -1260,11 +1312,20 @@ export class Engine {
     const e = this.eff(a)
     return { id: a.id, name: a.name, side: 'p', idx: i, hp: a.hp, mhp: a.mhp, mp: a.mp, mmp: a.mmp, atk: e.atk, def: e.def, mag: e.mag, spd: a.spd, skills: a.skills, buffAtk: 0, buffDef: 0, guard: false, actor: a }
   }
-  private mkEnemyBt(id: string, i: number): Bt {
+  /** 生命涨得比攻击慢，防御更慢，避免后段变成秒杀海绵 */
+  private enemyMul(es: number) {
+    const k = Math.max(0, es - 1)
+    return { hp: 1 + k * 0.4, atk: 1 + k * 0.32, def: 1 + k * 0.18 }
+  }
+  private mkEnemyBt(id: string, i: number, es = this.flags.escale ?? 1): Bt {
     const t = ENEMIES[id]
-    const es = this.flags.escale ?? 1
-    const hp = Math.round(t.hp * es)
-    return { id, name: t.name, side: 'e', idx: i, hp, mhp: hp, mp: 99, mmp: 99, atk: Math.round(t.atk * (1 + (es - 1) * 0.55)), def: Math.round(t.def * (1 + (es - 1) * 0.5)), mag: Math.round(t.mag * (1 + (es - 1) * 0.55)), spd: t.spd, skills: t.skills, buffAtk: 0, buffDef: 0, guard: false, tpl: t }
+    const m = this.enemyMul(es)
+    const hp = Math.round(t.hp * m.hp)
+    return {
+      id, name: t.name, side: 'e', idx: i, hp, mhp: hp, mp: 99, mmp: 99,
+      atk: Math.round(t.atk * m.atk), def: Math.round(t.def * m.def), mag: Math.round(t.mag * m.atk),
+      spd: t.spd, skills: t.skills, buffAtk: 0, buffDef: 0, guard: false, tpl: t,
+    }
   }
   private spriteOf(p: Portrait, view: 'front' | 'back') {
     return lookURL(p, view)
@@ -1318,10 +1379,13 @@ export class Engine {
     this.bts = []
     const pb = this.partyActors().map((a, i) => this.mkPartyBt(a, i))
     pb.forEach((b) => this.bts.push(b))
-    const eb = o.enemies.map((id, i) => this.mkEnemyBt(id, i))
+    const es = this.fightScale ?? this.flags.escale ?? 1
+    this.fightScale = null
+    const eb = o.enemies.map((id, i) => this.mkEnemyBt(id, i, es))
     eb.forEach((b) => this.bts.push(b))
     this.bview = {
       bg: o.bg ?? this.bgFor() ?? 'grass',
+      noLose: !!o.noLose,
       enemies: eTpls.map((t, i) => ({ uid: i, name: t.name, hp: eb[i].hp, mhp: eb[i].mhp, img: this.spriteOf({ look: t.look, creature: t.creature }, 'front'), scale: t.scale ?? 1, dead: false })),
       party: this.partyActors().map((a) => {
         const tp = ACTORS[a.id]
@@ -1537,6 +1601,7 @@ export class Engine {
       let dmg = atk * pow - def * 0.55
       const crit = Math.random() < 0.08
       dmg = Math.max(1, Math.round(dmg * (0.88 + Math.random() * 0.24) * (crit ? 1.5 : 1)))
+      if (t.side === 'p') dmg = Math.min(dmg, Math.max(1, Math.round(t.mhp * 0.35)))
       t.hp -= dmg
       this.pop(t.side, t.idx, (crit ? '暴击 ' : '') + dmg, 'dmg')
       if (s.kind === 'drain') b.hp = Math.min(b.mhp, b.hp + Math.round(dmg / 2))
@@ -1686,6 +1751,7 @@ export class Engine {
             break
           }
         }
+        this.fightScale = ENC_SCALE[this.mapId] ?? 1.5
         void this.runScript([{ t: 'battle', o: { enemies: pick.ids } }])
       }
     }
