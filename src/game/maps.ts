@@ -909,6 +909,11 @@ for (let i = 0; i < DG.length; i++) {
   }
   m.ob(18, 14, -1)
   m.ob(18, 13, T.ALTAR)
+  // 打通中央红毯南口：南侧魔塔冰砖会堵在祭坛触发区外，玩家「靠近」却踩不中
+  for (let x = 16; x <= 20; x++) {
+    if (m.getO(x, 19) === T.ICEBRICK) m.ob(x, 19, -1)
+  }
+  if (m.getO(19, 20) === T.CRYSTAL) m.ob(19, 20, -1)
   m.anchor('start', 18, 24)
   m.anchor('altar', 18, 15)
   m.anchor('mid', 18, 18)
